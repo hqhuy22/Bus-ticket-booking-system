@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
+import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import {
   TrendingUp,
   DollarSign,
@@ -10,12 +10,9 @@ import {
   CheckCircle,
   AlertCircle,
   RefreshCw,
-} from 'lucide-react';
-import axios from 'axios';
-import { formatCurrency } from '../../utils/pricingCalculator';
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+} from "lucide-react";
+import axios from "../../utils/axiosConfig";
+import { formatCurrency } from "../../utils/pricingCalculator";
 
 export default function AdminOverview() {
   const [loading, setLoading] = useState(true);
@@ -29,12 +26,9 @@ export default function AdminOverview() {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-
       const [summaryRes, schedulesRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/api/analytics/summary`, { headers }),
-        axios.get(`${API_BASE_URL}/api/bus-schedules/admin`, { headers }),
+        axios.get("/api/analytics/summary"),
+        axios.get("/api/bus-schedules/admin"),
       ]);
 
       setSummary(summaryRes.data);
@@ -46,7 +40,7 @@ export default function AdminOverview() {
       // API returns { schedules: [...], pagination: {...} }
       const allSchedules = schedulesRes.data.schedules || [];
       const upcoming = allSchedules
-        .filter(schedule => {
+        .filter((schedule) => {
           // Combine departure_date and departure_time to create Date object
           const scheduleDateTime = new Date(
             `${schedule.departure_date}T${schedule.departure_time}`
@@ -66,7 +60,7 @@ export default function AdminOverview() {
 
       setUpcomingTrips(upcoming);
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error("Error fetching dashboard data:", error);
     } finally {
       setLoading(false);
     }
@@ -76,7 +70,7 @@ export default function AdminOverview() {
     title,
     value,
     icon: Icon,
-    color = 'blue',
+    color = "blue",
     subtitle,
     trend,
   }) => (
@@ -91,12 +85,12 @@ export default function AdminOverview() {
         {trend && (
           <div
             className={`flex items-center gap-1 text-sm ${
-              parseFloat(trend) >= 0 ? 'text-success-600' : 'text-error-600'
+              parseFloat(trend) >= 0 ? "text-success-600" : "text-error-600"
             }`}
           >
             <TrendingUp
               size={16}
-              className={parseFloat(trend) < 0 ? 'rotate-180' : ''}
+              className={parseFloat(trend) < 0 ? "rotate-180" : ""}
             />
             <span>{Math.abs(parseFloat(trend))}%</span>
           </div>
@@ -117,13 +111,13 @@ export default function AdminOverview() {
     trend: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   };
 
-  const getColorCode = color => {
+  const getColorCode = (color) => {
     const colors = {
-      blue: '#3B82F6',
-      green: '#10B981',
-      orange: '#F59E0B',
-      purple: '#8B5CF6',
-      red: '#EF4444',
+      blue: "#3B82F6",
+      green: "#10B981",
+      orange: "#F59E0B",
+      purple: "#8B5CF6",
+      red: "#EF4444",
     };
     return colors[color] || colors.blue;
   };
@@ -226,7 +220,7 @@ export default function AdminOverview() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {upcomingTrips.map(trip => (
+                {upcomingTrips.map((trip) => (
                   <tr key={trip.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
@@ -273,8 +267,8 @@ export default function AdminOverview() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <div className="text-sm font-medium text-gray-900">
-                          {trip.availableSeats} /{' '}
-                          {trip.bus?.totalSeats || 'N/A'}
+                          {trip.availableSeats} /{" "}
+                          {trip.bus?.totalSeats || "N/A"}
                         </div>
                         {trip.availableSeats < 5 && trip.availableSeats > 0 && (
                           <AlertCircle
