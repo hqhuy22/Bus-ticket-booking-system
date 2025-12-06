@@ -1,0 +1,5 @@
+# Normalize line endings by default
+* text=auto
+
+# Ensure TypeScript files use LF endings
+*.ts text eol=lf
