@@ -10,7 +10,7 @@ import { calculateBookingPrice } from "../utils/pricingCalculator";
 export default function BookingProceedUpdated() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { schedule, selectedSeats, sessionId } = location.state || {};
+  const { schedule, selectedSeats = [], sessionId } = location.state || {};
 
   const normalizedSchedule = useMemo(() => {
     if (!schedule) return null;
@@ -179,8 +179,8 @@ export default function BookingProceedUpdated() {
     try {
       setLoading(true);
       const pricing = calculateBookingPrice(
-        schedule.price,
-        selectedSeats.length
+        schedule?.price || 0,
+        selectedSeats?.length || 0
       );
       const bookingData = {
         busScheduleId: normalizedSchedule?.id || schedule.id,
@@ -241,8 +241,8 @@ export default function BookingProceedUpdated() {
   };
 
   const previewPricing = calculateBookingPrice(
-    schedule.price,
-    selectedSeats.length
+    schedule?.price || 0,
+    selectedSeats?.length || 0
   );
   const bookingData = {
     schedule: {
