@@ -98,6 +98,11 @@ export default function SeatSelection() {
   }, [lockTimer]);
 
   const fetchSeatAvailability = async () => {
+    if (!schedule?.id) {
+      setError("No schedule selected. Please start from search page.");
+      setLoading(false);
+      return;
+    }
     try {
       const response = await axios.get(
         `/api/seats/availability/${schedule.id}`
@@ -105,7 +110,9 @@ export default function SeatSelection() {
       setSeatAvailability(response.data);
       setLoading(false);
     } catch (err) {
-      setError("Failed to load seat availability");
+      setError(
+        err.response?.data?.message || "Failed to load seat availability"
+      );
       setLoading(false);
     }
   };
@@ -123,7 +130,7 @@ export default function SeatSelection() {
     if (newSelectedSeats.length > 0) {
       try {
         const response = await axios.post("/api/seats/lock", {
-          scheduleId: schedule.id,
+          scheduleId: schedule?.id,
           seatNumbers: newSelectedSeats,
           sessionId,
         });
@@ -181,6 +188,11 @@ export default function SeatSelection() {
       alert("Please select at least one seat");
       return;
     }
+    if (!schedule) {
+      alert("Schedule missing. Please re-start your search.");
+      navigate("/bus-booking/search-buses");
+      return;
+    }
     if (typeof window !== "undefined" && window.__skipSeatRelease) {
       window.__skipSeatRelease(true);
     }
@@ -217,8 +229,8 @@ export default function SeatSelection() {
 
   const totalSeats =
     seatAvailability?.totalSeats ||
-    schedule.totalSeats ||
-    schedule.availableSeats ||
+    schedule?.totalSeats ||
+    schedule?.availableSeats ||
     40;
   const seatMapConfig = seatAvailability?.seatMap || null;
   const bookedSeats = seatAvailability?.bookedSeats || [];
@@ -233,8 +245,9 @@ export default function SeatSelection() {
               Select Your Seats
             </h1>
             <p className="text-gray-600">
-              Route #{schedule.routeNo} • {schedule.departure_city} →{" "}
-              {schedule.arrival_city}
+              Route #{schedule?.routeNo || "—"} •{" "}
+              {schedule?.departure_city || schedule?.departure || "?"} →{" "}
+              {schedule?.arrival_city || schedule?.arrival || "?"}
             </p>
           </div>
           <button
@@ -283,6 +296,10 @@ export default function SeatSelection() {
             sessionId={sessionId}
             maxSeatsAllowed={5}
           />
+          <p className="mt-4 text-sm text-gray-600">
+            Tip: seat locks last for {Math.ceil(LOCK_DURATION / 60)} minutes.
+            Extending locks keeps your seats while you fill passenger details.
+          </p>
         </div>
 
         <div className="flex justify-end gap-3">

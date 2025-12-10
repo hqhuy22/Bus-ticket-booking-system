@@ -61,6 +61,21 @@ export default function BookingProceedUpdated() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
+    // Keep passenger slots aligned with selected seats when user navigates back and forth.
+    if (!selectedSeats || selectedSeats.length === passengers.length) return;
+    setPassengers(
+      selectedSeats.map((seatNo, idx) => ({
+        seatNumber: seatNo,
+        name: passengers[idx]?.name || "",
+        age: passengers[idx]?.age || "",
+        gender: passengers[idx]?.gender || "",
+        phone: passengers[idx]?.phone || "",
+        email: passengers[idx]?.email || "",
+      }))
+    );
+  }, [selectedSeats]);
+
+  useEffect(() => {
     const token =
       localStorage.getItem("token") || document.cookie.includes("token=");
     const loggedIn = !!token;
@@ -150,6 +165,12 @@ export default function BookingProceedUpdated() {
     setGuestInfo(updatedGuestInfo);
 
   const validateAndProceed = () => {
+    if (!selectedSeats || selectedSeats.length === 0) {
+      alert("Please select at least one seat before continuing.");
+      navigate("/bus-booking/seat-selection", { state: { schedule } });
+      return;
+    }
+
     const allValid = passengers.every(
       (p) => p.name && p.age && p.gender && p.phone
     );
@@ -178,6 +199,16 @@ export default function BookingProceedUpdated() {
   const handleCreateBooking = async () => {
     try {
       setLoading(true);
+      if (!selectedSeats || selectedSeats.length === 0) {
+        alert("No seats selected. Please go back and select seats.");
+        setLoading(false);
+        return;
+      }
+      if (passengers.length !== selectedSeats.length) {
+        alert("Please provide passenger details for all selected seats.");
+        setLoading(false);
+        return;
+      }
       const pricing = calculateBookingPrice(
         schedule?.price || 0,
         selectedSeats?.length || 0
@@ -263,6 +294,7 @@ export default function BookingProceedUpdated() {
     },
     pickupPoint,
     dropoffPoint,
+    lockExpiresAt: lockTimeRemaining,
   };
 
   return (

@@ -34,6 +34,7 @@ export default function BookingSummary({
     seatNumbers = [],
     passengers = [],
     pricing = {},
+    lockExpiresAt,
   } = bookingData;
   const {
     busFare = 0,
@@ -108,6 +109,12 @@ export default function BookingSummary({
             </p>
           </div>
         </div>
+
+        {typeof lockExpiresAt === "number" && (
+          <div className="mt-4 text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-lg p-3">
+            Seat lock active. Time remaining: {lockExpiresAt} seconds.
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-lg shadow-md p-6">
