@@ -1,0 +1,155 @@
+.bookings-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.bookings-container h1 {
+  margin-bottom: 30px;
+  color: var(--text-dark);
+}
+
+.no-bookings {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 12px;
+  border: 2px dashed var(--border-color);
+}
+
+.no-bookings p {
+  color: var(--text-light);
+  font-size: 16px;
+}
+
+.booking-list {
+  display: grid;
+  gap: 20px;
+}
+
+.booking-card {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  transition: box-shadow 0.3s ease;
+}
+
+.booking-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.booking-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.booking-header h3 {
+  color: var(--primary-color);
+  font-size: 16px;
+}
+
+.status {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status.confirmed {
+  background: #dcfce7;
+  color: var(--success-color);
+}
+
+.status.pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.booking-route {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.station {
+  text-align: left;
+}
+
+.station .city {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--text-dark);
+}
+
+.station .time {
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+.arrow {
+  flex: 1;
+  text-align: center;
+  color: var(--text-light);
+  font-size: 20px;
+}
+
+.booking-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.booking-info p {
+  font-size: 14px;
+  color: var(--text-dark);
+}
+
+.booking-info strong {
+  display: block;
+  font-size: 12px;
+  color: var(--text-light);
+  margin-bottom: 4px;
+}
+
+.booking-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.booking-actions button {
+  flex: 1;
+  min-width: 120px;
+  padding: 10px 15px;
+  font-size: 13px;
+  border-radius: 6px;
+}
+
+.view-btn,
+.download-btn {
+  background: var(--primary-color);
+  color: white;
+}
+
+.pay-btn {
+  background: var(--success-color);
+  color: white;
+}
+
+.view-btn:hover,
+.download-btn:hover {
+  background: var(--secondary-color);
+}
+
+.pay-btn:hover {
+  background: #15803d;
+}
