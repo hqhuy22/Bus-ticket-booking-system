@@ -3,3 +3,7 @@
 
 # Ensure TypeScript files use LF endings
 *.ts text eol=lf
+
+# Ensure JavaScript and JSON config files use LF endings
+*.js text eol=lf
+*.json text eol=lf

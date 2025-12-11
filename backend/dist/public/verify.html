@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Verify Email</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Roboto, 'Segoe UI', Arial; padding: 16px; max-width: 720px; margin: 0 auto; }
+      .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 18px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+      h1 { font-size: 1.25rem; margin: 0 0 12px; }
+      p { color: #374151; }
+      .actions { margin-top: 16px; display:flex; gap:12px; flex-wrap:wrap; }
+      button { background:#2563eb; color:white; border:none; padding:10px 14px; border-radius:8px; font-size:1rem; }
+      .muted { background:#f3f4f6; color:#111827; }
+      .qr { width:200px; height:200px; border-radius:8px; border:1px solid #e5e7eb; }
+      .result { margin-top:12px; font-weight:600; }
+      .small { font-size:0.9rem; color:#6b7280; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Verify your email</h1>
+      <p class="small">This page helps you complete email verification. If you opened the verification link on desktop, click the button below. To verify on your phone, scan the QR code.</p>
+
+      <div id="info" class="small" style="margin-top:12px"></div>
+
+      <div class="actions">
+        <button id="checkBtn">Verify</button>
+        <button id="resendBtn" class="muted">Resend verification email</button>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div id="status" class="result"></div>
+        <div id="expired" class="small" style="margin-top:8px;color:#b91c1c;display:none">Token expired or invalid. You can resend a new verification email below.</div>
+      </div>
+
+      <div id="resendForm" style="margin-top:12px;display:none">
+        <div class="small">Enter your email to resend verification:</div>
+        <div style="margin-top:8px;display:flex;gap:8px;">
+          <input id="resendEmail" placeholder="you@example.com" style="flex:1;padding:8px;border-radius:8px;border:1px solid #e5e7eb" />
+          <button id="sendResend">Send</button>
+        </div>
+        <div id="resendStatus" class="small" style="margin-top:8px"></div>
+      </div>
+    </div>
+
+    <script>
+      // Read token from querystring
+      function qs(name) {
+        const params = new URLSearchParams(window.location.search);
+        return params.get(name);
+      }
+
+      const token = qs('token');
+      const apiBase = (window.location.origin || (window.location.protocol + '//' + window.location.host));
+      const verifyApi = apiBase + '/api/v1/auth/verify?token=' + encodeURIComponent(token || '');
+      const resendApi = apiBase + '/api/v1/auth/resend';
+
+      const infoEl = document.getElementById('info');
+      const btn = document.getElementById('checkBtn');
+      const resendBtn = document.getElementById('resendBtn');
+      const status = document.getElementById('status');
+      const expiredEl = document.getElementById('expired');
+      const resendForm = document.getElementById('resendForm');
+      const resendEmail = document.getElementById('resendEmail');
+      const sendResend = document.getElementById('sendResend');
+      const resendStatus = document.getElementById('resendStatus');
+
+      // try to extract email from token payload (JWT) to prefill resend email
+      function decodeJwtPayload(t) {
+        try {
+          const parts = t.split('.');
+          if (parts.length < 2) return null;
+          const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+          const json = decodeURIComponent(atob(payload).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+          }).join(''));
+          return JSON.parse(json);
+        } catch (e) {
+          return null;
+        }
+      }
+
+      if (!token) {
+        infoEl.textContent = 'No token found in the URL. Please open the verification link from your email.';
+        btn.disabled = true;
+        resendBtn.disabled = false;
+      } else {
+        infoEl.textContent = '';
+        const payload = decodeJwtPayload(token);
+        if (payload && payload.email) {
+          resendEmail.value = payload.email;
+          // check verification status from server
+          (async () => {
+            try {
+              const resp = await fetch(apiBase + '/api/v1/auth/status?email=' + encodeURIComponent(payload.email));
+              const json = await resp.json();
+              if (resp.ok && json.verified) {
+                status.textContent = 'Account already verified ✅';
+                status.style.color = 'green';
+                btn.disabled = true;
+                resendForm.style.display = 'none';
+                resendBtn.disabled = true;
+              }
+            } catch (e) {
+              // ignore
+            }
+          })();
+        }
+      }
+
+      btn.addEventListener('click', async () => {
+        if (!token) return;
+        status.textContent = 'Checking...';
+        status.style.color = '';
+        try {
+          const res = await fetch(verifyApi, { method: 'GET', credentials: 'same-origin' });
+          const data = await res.json();
+          if (res.ok) {
+            status.textContent = 'Verified ✅';
+            status.style.color = 'green';
+            expiredEl.style.display = 'none';
+            resendForm.style.display = 'none';
+          } else {
+            status.textContent = data && data.message ? data.message : 'Verification failed';
+            status.style.color = 'crimson';
+            // If message indicates expired token, show resend option
+            if (data && /(expired|jwt expired|token)/i.test(data.message || '')) {
+              expiredEl.style.display = 'block';
+              // do not automatically show email input; user can click Resend to use prefilled email or enter manually
+              resendForm.style.display = 'none';
+            }
+          }
+        } catch (err) {
+          status.textContent = 'Network error';
+          status.style.color = 'crimson';
+        }
+      });
+
+      // Resend cooldown (10s) persisted in localStorage so multiple clicks are limited.
+      const RESEND_COOLDOWN_SECONDS = 10;
+      const RESEND_KEY = 'verify_resend_last_ts';
+      let cooldownTimer = null;
+
+      function getLastResend() {
+        const v = localStorage.getItem(RESEND_KEY);
+        return v ? Number(v) : 0;
+      }
+
+      function setLastResend(ts) {
+        localStorage.setItem(RESEND_KEY, String(ts));
+      }
+
+      function secondsRemaining() {
+        const last = getLastResend();
+        const now = Math.floor(Date.now() / 1000);
+        const diff = now - last;
+        return Math.max(0, RESEND_COOLDOWN_SECONDS - diff);
+      }
+
+      function startCooldownUI() {
+        const rem = secondsRemaining();
+        if (rem <= 0) {
+          resendBtn.disabled = false;
+          resendBtn.textContent = 'Resend verification email';
+          if (cooldownTimer) { clearInterval(cooldownTimer); cooldownTimer = null; }
+          return;
+        }
+        resendBtn.disabled = true;
+        resendBtn.textContent = `Resend (${rem}s)`;
+        if (cooldownTimer) clearInterval(cooldownTimer);
+        cooldownTimer = setInterval(() => {
+          const r = secondsRemaining();
+          if (r <= 0) {
+            startCooldownUI();
+          } else {
+            resendBtn.textContent = `Resend (${r}s)`;
+          }
+        }, 1000);
+      }
+
+      // initialize cooldown UI on load
+      startCooldownUI();
+
+      async function doResend(email) {
+        resendStatus.textContent = 'Sending...';
+        resendStatus.style.color = '';
+        try {
+          const res = await fetch(resendApi, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            const now = Math.floor(Date.now() / 1000);
+            setLastResend(now);
+            startCooldownUI();
+            resendStatus.textContent = 'Verification email sent';
+            resendStatus.style.color = 'green';
+          } else {
+            resendStatus.textContent = data && data.message ? data.message : 'Failed to resend';
+            resendStatus.style.color = 'crimson';
+          }
+        } catch (err) {
+          resendStatus.textContent = 'Network error';
+          resendStatus.style.color = 'crimson';
+        }
+      }
+
+      // Resend button handler: use prefilled email if present, otherwise reveal input
+      resendBtn.addEventListener('click', async () => {
+        const rem = secondsRemaining();
+        if (rem > 0) {
+          resendStatus.textContent = `Please wait ${rem}s before resending`;
+          resendStatus.style.color = 'crimson';
+          return;
+        }
+
+        const email = (resendEmail.value || '').trim();
+        if (!email) {
+          // reveal input for manual entry
+          resendForm.style.display = 'block';
+          resendStatus.textContent = 'Please enter your email and press Send';
+          resendStatus.style.color = '#6b7280';
+          return;
+        }
+        await doResend(email);
+      });
+
+      // Manual send button respects same cooldown
+      sendResend.addEventListener('click', async () => {
+        const rem = secondsRemaining();
+        if (rem > 0) {
+          resendStatus.textContent = `Please wait ${rem}s before resending`;
+          resendStatus.style.color = 'crimson';
+          return;
+        }
+        const email = (resendEmail.value || '').trim();
+        if (!email) {
+          resendStatus.textContent = 'Please enter an email';
+          resendStatus.style.color = 'crimson';
+          return;
+        }
+        await doResend(email);
+      });
+    </script>
+  </body>
+</html>

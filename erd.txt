@@ -1,0 +1,154 @@
+1. BẢNG OPERATOR
+Cột:
+- id (uuid)
+- name (string)
+- contact_email (string)
+- contact_phone (string)
+- status (string)
+- approved_at (timestamp)
+Quan hệ:
+- Một OPERATOR quản lý nhiều ROUTE
+- Một OPERATOR sở hữu nhiều BUS
+
+2. BẢNG ROUTE
+Cột:
+- id (uuid)
+- operator_id (uuid)
+- origin (string)
+- destination (string)
+- distance_km (integer)
+- estimated_minutes (integer)
+Quan hệ:
+- ROUTE thuộc một OPERATOR
+- ROUTE có nhiều TRIP
+
+3. BẢNG BUS
+Cột:
+- id (uuid)
+- operator_id (uuid)
+- plate_number (string)
+- model (string)
+- seat_capacity (integer)
+- amenities_json (string)
+Quan hệ:
+- BUS thuộc một OPERATOR
+- BUS có nhiều SEAT
+
+4. BẢNG SEAT
+Cột:
+- id (uuid)
+- bus_id (uuid)
+- seat_code (string)
+- seat_type (string)
+- is_active (boolean)
+Quan hệ:
+- SEAT thuộc BUS
+
+5. BẢNG TRIP
+Cột:
+- id (uuid)
+- route_id (uuid)
+- bus_id (uuid)
+- departure_time (timestamp)
+- arrival_time (timestamp)
+- base_price (decimal)
+- status (string)
+Quan hệ:
+- TRIP thuộc ROUTE
+- TRIP có nhiều BOOKING
+- TRIP có nhiều FEEDBACK
+- TRIP có nhiều SEAT_STATUS
+6. BẢNG USER
+Cột:
+- id (uuid)
+- email (string)
+- phone (string)
+- password_hash (string)
+- role (string)
+- created_at (timestamp)
+Quan hệ:
+- USER có nhiều BOOKING
+- USER có nhiều PAYMENT_METHOD
+- USER gửi FEEDBACK
+
+7. BẢNG PAYMENT_METHOD
+Cột:
+- id (uuid)
+- user_id (uuid)
+- provider (string)
+- token (string)
+- is_default (boolean)
+- created_at (timestamp)
+Quan hệ:
+- PAYMENT_METHOD thuộc USER
+
+8. BẢNG FEEDBACK
+Cột:
+- id (uuid)
+- trip_id (uuid)
+- user_id (uuid)
+- rating (integer)
+- comment (string)
+- submitted_at (timestamp)
+Quan hệ:
+- FEEDBACK thuộc USER
+- FEEDBACK thuộc TRIP
+
+9. BẢNG BOOKING
+Cột:
+- id (uuid)
+- user_id (uuid)
+- trip_id (uuid)
+- status (string)
+- total_amount (decimal)
+- booked_at (timestamp)
+Quan hệ:
+- BOOKING thuộc USER
+- BOOKING thuộc TRIP
+- BOOKING tạo ra PAYMENT
+- BOOKING tạo ra NOTIFICATION
+- BOOKING có PASSENGER_DETAIL
+
+10. BẢNG PAYMENT
+Cột:
+- id (uuid)
+- booking_id (uuid)
+- provider (string)
+- transaction_ref (string)
+- amount (decimal)
+- status (string)
+- processed_at (timestamp)
+Quan hệ:
+- PAYMENT thuộc BOOKING
+
+11. BẢNG NOTIFICATION
+Cột:
+- id (uuid)
+- booking_id (uuid)
+- channel (string)
+- template (string)
+- status (string)
+- sent_at (timestamp)
+Quan hệ:
+- NOTIFICATION thuộc BOOKING
+
+12. BẢNG PASSENGER_DETAIL
+Cột:
+- id (uuid)
+- booking_id (uuid)
+- full_name (string)
+- document_id (string)
+- seat_code (string)
+Quan hệ:
+- PASSENGER_DETAIL thuộc BOOKING
+
+13. BẢNG SEAT_STATUS
+Cột:
+- id (uuid)
+- trip_id (uuid)
+- seat_id (uuid)
+- state (string)
+- booking_id (uuid)
+- locked_until (timestamp)
+Quan hệ:
+- SEAT_STATUS thuộc TRIP
