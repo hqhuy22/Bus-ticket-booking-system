@@ -1,0 +1,201 @@
+.search-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.search-header {
+  background: var(--primary-color);
+  color: white;
+  padding: 30px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+}
+
+.search-header h1 {
+  font-size: 28px;
+}
+
+.search-form {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  margin-bottom: 30px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+}
+
+.form-group {
+  position: relative;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+}
+
+.search-form input,
+.search-form select {
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.suggestions-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid var(--border-color);
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.suggestion-item {
+  padding: 12px;
+  cursor: pointer;
+  color: var(--text-dark);
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover {
+  background-color: #f3f4f6;
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+.search-btn {
+  background: var(--primary-color);
+  color: white;
+  font-weight: 600;
+  grid-column: -1;
+}
+
+.search-btn:hover {
+  background: var(--secondary-color);
+}
+
+.results h2 {
+  margin-bottom: 20px;
+  color: var(--text-dark);
+}
+
+.trip-list {
+  display: grid;
+  gap: 20px;
+}
+
+.trip-card {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 30px;
+  transition: box-shadow 0.3s ease;
+}
+
+.trip-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.trip-route {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  flex: 1;
+}
+
+.station {
+  text-align: center;
+}
+
+.station .time {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.station .city {
+  font-size: 14px;
+  color: var(--text-light);
+  margin-top: 5px;
+}
+
+.trip-info {
+  border-left: 2px dashed var(--border-color);
+  border-right: 2px dashed var(--border-color);
+  padding: 0 20px;
+}
+
+.duration {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+.trip-details {
+  display: flex;
+  gap: 15px;
+  font-size: 13px;
+}
+
+.bus-type {
+  color: var(--text-light);
+}
+
+.seats {
+  color: var(--success-color);
+  font-weight: 600;
+}
+
+.trip-footer {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.price {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.book-btn {
+  background: var(--primary-color);
+  color: white;
+  padding: 10px 24px;
+}
+
+.book-btn:hover {
+  background: var(--secondary-color);
+}
+
+@media (max-width: 768px) {
+  .trip-card {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .search-form {
+    grid-template-columns: 1fr;
+  }
+
+  .search-btn {
+    grid-column: auto;
+  }
+}
