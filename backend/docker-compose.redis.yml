@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7
+    # use password from .env (REDIS_PASSWORD) if present; fallback to 'huy12345'
+    command: redis-server --requirepass ${REDIS_PASSWORD:-huy12345}
+    ports:
+      # bind to localhost only on the host to avoid exposing to network
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+    name: bus_booking_redis_data

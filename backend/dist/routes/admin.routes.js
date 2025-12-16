@@ -37,6 +37,11 @@ router.post('/trips/schedule', (0, validation_middleware_1.validateRequest)(trip
 router.put('/trips/:id/schedule', (0, validation_middleware_1.validateRequest)(trip_validator_1.validateScheduleTripInput, 'body'), admin_controller_1.default.updateTripSchedule);
 router.get('/trips/schedule', (0, validation_middleware_1.validateRequest)(trip_validator_1.validateScheduleQuery, 'query'), admin_controller_1.default.getTripSchedule);
 router.get('/buses/:busId/schedule', (0, validation_middleware_1.validateRequest)(trip_validator_1.validateScheduleQuery, 'query'), admin_controller_1.default.getBusSchedule);
+// Bookings (admin)
+router.get('/bookings', admin_controller_1.default.getAllBookings);
+router.get('/bookings/:id', admin_controller_1.default.getBookingById);
+router.post('/bookings/:id/cancel', admin_controller_1.default.cancelBookingAdmin);
+router.patch('/bookings/:id/status', admin_controller_1.default.updateBookingStatus);
 // Bus seat templates
 router.post('/buses/:busId/seats', (0, validation_middleware_1.validateRequest)(trip_validator_1.validateSeatConfigInput, 'body'), admin_controller_1.default.createBusSeatTemplate);
 router.get('/buses/:busId/seats', admin_controller_1.default.listBusSeatTemplates);

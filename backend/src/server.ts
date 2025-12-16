@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import cors from 'cors';
 import dotenv from 'dotenv';
 import morgan from 'morgan';
 import apiRouter from './routes';
@@ -15,6 +16,7 @@ try {
   cookieParser = () => (req: any, res: any, next: any) => next();
 }
 import passport from './config/passport';
+import { setupBookingCleanupJob } from './jobs/bookingCleanup';
 
 // Load environment variables
 dotenv.config();
@@ -28,6 +30,27 @@ app.use(express.json());
 app.use(cookieParser());
 // initialize passport (strategy configured in src/config/passport.ts)
 app.use(passport.initialize());
+
+// Enable CORS for frontend dev server and configured app base URL
+const allowedOrigins = [
+  process.env.APP_BASE_URL || 'http://localhost:3000',
+  'http://localhost:5173',
+];
+app.use(
+  cors({
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
+      // allow requests with no origin like curl/postman
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) !== -1) return callback(null, true);
+      return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+  }),
+);
+app.options('*', cors());
 
 // Serve a small static site (verify page) from src/public
 app.use(express.static(path.join(__dirname, 'public')));
@@ -58,6 +81,13 @@ if (require.main === module) {
         await runMigrations();
         // eslint-disable-next-line no-console
         console.log('Migrations finished');
+      }
+
+      // start booking cleanup job in non-test environments
+      if (process.env.NODE_ENV !== 'test') {
+        setupBookingCleanupJob();
+        // eslint-disable-next-line no-console
+        console.log('Booking cleanup job started');
       }
 
       await pool.connect();

@@ -56,12 +56,7 @@ dotenv_1.default.config();
             // find an operator
             const op = await (0, db_1.query)('SELECT id FROM operators LIMIT 1');
             const opId = op?.rows?.[0]?.id ?? null;
-            await (0, db_1.query)('INSERT INTO buses (operator_id, plate_number, model, seat_capacity) VALUES ($1,$2,$3,$4)', [
-                opId,
-                'ABC-123',
-                'DemoBus 1',
-                40,
-            ]);
+            await (0, db_1.query)('INSERT INTO buses (operator_id, plate_number, model, seat_capacity) VALUES ($1,$2,$3,$4)', [opId, 'ABC-123', 'DemoBus 1', 40]);
             console.log('Bus seeded');
         }
         else {
@@ -75,7 +70,9 @@ dotenv_1.default.config();
         try {
             await db_1.default.end();
         }
-        catch (_) { }
+        catch (_) {
+            // Intentionally left empty
+        }
         process.exit(1);
     }
 })();

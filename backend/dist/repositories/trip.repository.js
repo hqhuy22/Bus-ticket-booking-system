@@ -154,6 +154,132 @@ class TripRepository {
         const res = await (0, db_1.query)(`SELECT ss.*, s.seat_code, s.seat_type, s.is_active as seat_is_active FROM seat_statuses ss JOIN seats s ON s.id = ss.seat_id WHERE ss.trip_id = $1 ORDER BY s.seat_code ASC`, [tripId]);
         return res.rows;
     }
+    // Update state of multiple seats in a transaction.
+    // state: 'available' | 'locked' | 'booked'
+    // bookingId: if provided, will be applied or cleared when null is explicitly passed
+    static async updateSeatStatuses(tripId, seatIds, state, bookingId, clientParam) {
+        if (!seatIds || seatIds.length === 0)
+            return;
+        const clientProvided = clientParam !== undefined && clientParam !== null;
+        const client = clientProvided ? clientParam : await (0, db_1.getClient)();
+        const shouldRelease = !clientProvided;
+        try {
+            if (!clientProvided)
+                await client.query('BEGIN');
+            // Build dynamic query depending on desired state and bookingId presence
+            const params = [];
+            const setParts = [];
+            // state will be $1
+            setParts.push(`state = $${params.length + 1}`);
+            params.push(state);
+            if (state === 'available') {
+                setParts.push(`booking_id = NULL`);
+                setParts.push(`locked_until = NULL`);
+                setParts.push(`lock_owner = NULL`);
+            }
+            else if (state === 'booked') {
+                // set booking_id to provided value (must be provided to mark booked)
+                if (bookingId !== undefined) {
+                    setParts.push(`booking_id = $${params.length + 1}`);
+                    params.push(bookingId);
+                }
+                setParts.push(`locked_until = NULL`);
+                setParts.push(`lock_owner = NULL`);
+            }
+            else if (state === 'locked') {
+                // do not change locked_until here; separate method exists to set locked_until
+                if (bookingId !== undefined) {
+                    // allow associating a booking while locking
+                    setParts.push(`booking_id = $${params.length + 1}`);
+                    params.push(bookingId);
+                }
+            }
+            // next parameter will be trip_id
+            params.push(tripId);
+            const tripParamIndex = params.length; // index of trip_id in the params array
+            // seat id placeholders follow trip_id
+            const seatPlaceholders = seatIds.map((_, i) => `$${tripParamIndex + i + 1}`);
+            params.push(...seatIds);
+            const q = `UPDATE seat_statuses SET ${setParts.join(', ')} WHERE trip_id = $${tripParamIndex} AND seat_id IN (${seatPlaceholders.join(', ')})`;
+            await client.query(q, params);
+            if (!clientProvided)
+                await client.query('COMMIT');
+        }
+        catch (err) {
+            if (!clientProvided)
+                await client.query('ROLLBACK');
+            throw err;
+        }
+        finally {
+            if (shouldRelease)
+                client.release();
+        }
+    }
+    // Get all seat statuses for a trip joined with seat info
+    static async getSeatStatusesByTrip(tripId) {
+        const res = await (0, db_1.query)(`SELECT ss.*, s.seat_code, s.seat_type, s.is_active as seat_is_active FROM seat_statuses ss JOIN seats s ON s.id = ss.seat_id WHERE ss.trip_id = $1 ORDER BY s.seat_code ASC`, [tripId]);
+        return res.rows;
+    }
+    // Release seats associated with a booking (set to available, clear booking_id and locked_until)
+    static async releaseSeatsByBooking(bookingId) {
+        if (!bookingId)
+            return;
+        const client = await (0, db_1.getClient)();
+        try {
+            await client.query('BEGIN');
+            await client.query(`UPDATE seat_statuses SET state = 'available', booking_id = NULL, locked_until = NULL, lock_owner = NULL WHERE booking_id = $1`, [bookingId]);
+            await client.query('COMMIT');
+        }
+        catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        }
+        finally {
+            client.release();
+        }
+    }
+    // Attempt to lock seats in the DB for a trip until `lockedUntil`.
+    // Returns false if any seat is already booked or currently locked (locked_until in future).
+    static async lockSeatsInDatabase(tripId, seatIds, lockedUntil) {
+        if (!seatIds || seatIds.length === 0)
+            return false;
+        const client = await (0, db_1.getClient)();
+        try {
+            await client.query('BEGIN');
+            // Lock the rows for update to prevent races
+            const params = [tripId, ...seatIds];
+            const seatPlaceholders = seatIds.map((_, i) => `$${i + 2}`); // $2..n
+            const selectQ = `SELECT * FROM seat_statuses WHERE trip_id = $1 AND seat_id IN (${seatPlaceholders.join(', ')}) FOR UPDATE`;
+            const sel = await client.query(selectQ, params);
+            const now = new Date();
+            for (const row of sel.rows) {
+                const st = row.state;
+                const locked_until = row.locked_until ? new Date(row.locked_until) : null;
+                if (st === 'booked') {
+                    await client.query('ROLLBACK');
+                    return false;
+                }
+                if (st === 'locked' && locked_until && locked_until > now) {
+                    await client.query('ROLLBACK');
+                    return false;
+                }
+            }
+            // safe to lock: update state and locked_until
+            const updateParams = [lockedUntil.toISOString(), tripId, ...seatIds];
+            const updatePlaceholders = seatIds.map((_, i) => `$${i + 3}`); // $3..n
+            const uq = `UPDATE seat_statuses SET state = 'locked', locked_until = $1 WHERE trip_id = $2 AND seat_id IN (${updatePlaceholders.join(', ')})`;
+            await client.query(uq, updateParams);
+            await client.query('COMMIT');
+            return true;
+        }
+        catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        }
+        finally {
+            client.release();
+        }
+    }
     // Search trips with filters and simple pagination. Returns { items, total }
     static async searchTrips(filters) {
         const clauses = [];

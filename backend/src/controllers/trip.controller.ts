@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { query } from '../config/db';
 import TripService from '../services/trip.service';
 import TripRepository from '../repositories/trip.repository';
+import SeatLockService from '../services/seatLock.service';
 
 export default class TripController {
   private tripService: TripService;
@@ -139,6 +140,82 @@ export default class TripController {
       return res.json(cities);
     } catch (err: any) {
       return res.status(500).json({ message: err.message });
+    }
+  }
+
+  // Return seat statuses merged with Redis locks for real-time seat map polling
+  async getSeatStatuses(req: Request, res: Response) {
+    try {
+      const tripId = (req.params as any).tripId || (req.params as any).id;
+      if (!tripId) return res.status(400).json({ message: 'missing tripId' });
+
+      // validate trip exists
+      try {
+        await this.tripService.getTripDetails(tripId);
+      } catch (e: any) {
+        const msg = e && e.message ? String(e.message) : 'internal error';
+        if (msg.includes('not found')) return res.status(404).json({ message: msg });
+        return res.status(500).json({ message: msg });
+      }
+
+      // fetch seat rows from DB (includes seat info)
+      const seats = await TripRepository.getSeatStatusesByTrip(tripId);
+      if (!seats || seats.length === 0) return res.json([]);
+
+      const seatIds = seats.map((s) => s.seat_id);
+
+      // get locked seats (Redis preferred; falls back to DB if Redis unavailable)
+      const lockedSeatIdsArr = await SeatLockService.getLockedSeats(tripId);
+      const lockedSeatIds = new Set(lockedSeatIdsArr);
+
+      // get per-seat lockedBy info when available
+      const availability = await SeatLockService.checkSeatAvailability(tripId, seatIds);
+      const availMap: Record<string, any> = {};
+      for (const a of availability) availMap[a.seatId] = a;
+
+      // allow client to supply session id so we can indicate locks owned by current client
+      const clientSessionId =
+        (req.headers['x-session-id'] as string) || (req.query.sessionId as string) || null;
+
+      const out = seats.map((s) => {
+        let state: 'available' | 'locked' | 'booked' = 'available';
+
+        // Redis locks (preferred) / fallback locks from DB will be in lockedSeatIds
+        if (lockedSeatIds.has(s.seat_id)) {
+          state = 'locked';
+        } else if (s.booking_id) {
+          state = 'booked';
+        } else if (s.state && s.state !== 'available') {
+          // honor DB state when not locked in Redis
+          state = s.state as any;
+        } else {
+          state = 'available';
+        }
+
+        const item: any = {
+          seatId: s.seat_id,
+          seatCode: s.seat_code,
+          seatType: s.seat_type,
+          state,
+        };
+
+        // include lockedBy only when locked and locked by current session
+        if (state === 'locked' && clientSessionId) {
+          const a = availMap[s.seat_id];
+          if (a && a.lockedBy && a.lockedBy === clientSessionId) {
+            item.lockedBy = clientSessionId;
+          }
+        }
+
+        return item;
+      });
+
+      return res.json(out);
+    } catch (err: any) {
+      console.error('getSeatStatuses error', err);
+      return res
+        .status(500)
+        .json({ message: err && err.message ? String(err.message) : 'internal error' });
     }
   }
 }

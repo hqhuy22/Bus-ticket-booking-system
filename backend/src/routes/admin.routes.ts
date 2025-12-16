@@ -60,6 +60,12 @@ router.get(
   AdminController.getBusSchedule,
 );
 
+// Bookings (admin)
+router.get('/bookings', AdminController.getAllBookings);
+router.get('/bookings/:id', AdminController.getBookingById);
+router.post('/bookings/:id/cancel', AdminController.cancelBookingAdmin);
+router.patch('/bookings/:id/status', AdminController.updateBookingStatus);
+
 // Bus seat templates
 router.post(
   '/buses/:busId/seats',

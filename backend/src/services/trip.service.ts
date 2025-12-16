@@ -1,4 +1,6 @@
 import { query } from '../config/db';
+import crypto from 'crypto';
+import redis, { ensureConnected } from '../utils/redis';
 import TripRepository, {
   CreateTripDTO as RepoCreateTripDTO,
   UpdateTripDTO as RepoUpdateTripDTO,
@@ -168,6 +170,18 @@ export default class TripService {
 
     const updated = await this.tripRepo.updateTrip(tripId, updateDto as any);
     if (!updated) throw new Error('failed to update trip');
+    // Invalidate relevant caches: search results and this trip's seats
+    try {
+      if (redis && (await ensureConnected())) {
+        // delete all search caches
+        const keys = await redis.keys('trips:search:*');
+        if (keys && keys.length > 0) await redis.del(...keys);
+        // delete this trip's seats cache
+        await redis.del(`trip:${tripId}:seats`);
+      }
+    } catch (e) {
+      // ignore redis errors and continue
+    }
     return updated;
   }
 
@@ -253,6 +267,36 @@ export default class TripService {
     const limit = filters && filters.limit && filters.limit > 0 ? Math.floor(filters.limit) : 25;
     const offset = (page - 1) * limit;
 
+    // Attempt to serve from cache first using a hash of query params
+    const hashParams = (obj: any) => {
+      const h = crypto.createHash('sha1');
+      h.update(JSON.stringify(obj || {}));
+      return h.digest('hex');
+    };
+    const cacheKey = `trips:search:${hashParams({
+      origin,
+      destination,
+      date,
+      filters,
+      page,
+      limit,
+      offset,
+    })}`;
+    try {
+      if (redis && (await ensureConnected())) {
+        const cached = await redis.get(cacheKey);
+        if (cached) {
+          try {
+            return JSON.parse(cached) as SearchResult;
+          } catch (e) {
+            // ignore parse errors and fall through to fetch
+          }
+        }
+      }
+    } catch (e) {
+      // Redis unavailable or error - fallback to DB
+    }
+
     const q = `SELECT trips.*, routes.origin, routes.destination, routes.distance_km, routes.estimated_minutes, buses.plate_number, buses.model, buses.seat_capacity
       FROM trips
       LEFT JOIN routes ON routes.id = trips.route_id
@@ -290,13 +334,44 @@ export default class TripService {
     })) as TripWithDetails[];
 
     const totalPages = Math.ceil(total / limit) || 1;
+    const result = { trips: items, totalCount: total, page, totalPages };
 
-    return { trips: items, totalCount: total, page, totalPages };
+    // Cache the search result (best-effort). TTL: 60s
+    try {
+      if (redis && (await ensureConnected())) {
+        await redis.set(cacheKey, JSON.stringify(result), 'EX', 60);
+      }
+    } catch (e) {
+      // ignore caching errors
+    }
+    return result;
   }
 
   async getTripDetails(tripId: string) {
     const details = await this.tripRepo.getTripWithDetails(tripId);
     if (!details) throw new Error('trip not found');
+
+    // Cache seat availability separately (TTL 5s). If cached, use it to avoid DB-heavy seat calculations.
+    try {
+      if (redis && (await ensureConnected())) {
+        const seatKey = `trip:${tripId}:seats`;
+        const cached = await redis.get(seatKey);
+        if (cached) {
+          try {
+            details.seats = JSON.parse(cached);
+            return details;
+          } catch (e) {
+            // fallthrough to set fresh cache
+          }
+        }
+
+        // store seats snapshot
+        await redis.set(seatKey, JSON.stringify(details.seats || []), 'EX', 5);
+      }
+    } catch (e) {
+      // ignore redis errors and return details
+    }
+
     return details;
   }
 }

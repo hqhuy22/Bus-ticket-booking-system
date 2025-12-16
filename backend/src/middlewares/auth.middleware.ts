@@ -25,3 +25,11 @@ export async function authMiddleware(req: AuthenticatedRequest, res: Response, n
     return res.status(401).json({ message: 'invalid token' });
   }
 }
+
+// Optional auth: if Authorization header present, verify and populate req.user.
+// If header is missing, continue as guest.
+export async function optionalAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  const auth = req.headers.authorization;
+  if (!auth || !auth.startsWith('Bearer ')) return next();
+  return authMiddleware(req, res, next);
+}

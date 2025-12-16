@@ -57,7 +57,11 @@ dotenv_1.default.config();
             if ((has?.rowCount ?? 0) === 0) {
                 const seats = ['1A', '1B', '1C', '1D'];
                 for (const s of seats) {
-                    await (0, db_1.query)('INSERT INTO seats (bus_id, seat_code, seat_type) VALUES ($1,$2,$3)', [busId, s, 'standard']);
+                    await (0, db_1.query)('INSERT INTO seats (bus_id, seat_code, seat_type) VALUES ($1,$2,$3)', [
+                        busId,
+                        s,
+                        'standard',
+                    ]);
                 }
                 console.log('Seats seeded');
             }
@@ -76,7 +80,9 @@ dotenv_1.default.config();
         try {
             await db_1.default.end();
         }
-        catch (_) { }
+        catch (_) {
+            // Intentionally ignored
+        }
         process.exit(1);
     }
 })();

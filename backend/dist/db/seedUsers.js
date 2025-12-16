@@ -58,7 +58,11 @@ dotenv_1.default.config();
         const hashed = await bcrypt_1.default.hash(password, 10);
         const res = await (0, db_1.query)('SELECT * FROM users WHERE email=$1', [email]);
         if ((res?.rowCount ?? 0) > 0) {
-            await (0, db_1.query)('UPDATE users SET password_hash=$1, role=$2, verified_at=now() WHERE email=$3', [hashed, 'admin', email]);
+            await (0, db_1.query)('UPDATE users SET password_hash=$1, role=$2, verified_at=now() WHERE email=$3', [
+                hashed,
+                'admin',
+                email,
+            ]);
             console.log('Admin user updated');
         }
         else {
@@ -73,7 +77,9 @@ dotenv_1.default.config();
         try {
             await db_1.default.end();
         }
-        catch (_) { }
+        catch (_) {
+            // Intentionally left empty to suppress errors during pool cleanup
+        }
         process.exit(1);
     }
 })();

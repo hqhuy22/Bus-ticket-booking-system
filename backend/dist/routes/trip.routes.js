@@ -14,6 +14,11 @@ router.get('/:id', (req, res) => {
     req.params.tripId = req.params.id;
     return trip_controller_1.DefaultTripController.getTripDetails(req, res);
 });
+// Return seat statuses (used by frontend polling every few seconds)
+router.get('/:id/seats', (req, res) => {
+    req.params.tripId = req.params.id;
+    return trip_controller_1.DefaultTripController.getSeatStatuses(req, res);
+});
 router.get('/cities', (req, res) => {
     return trip_controller_1.DefaultTripController.getCitiesList(req, res);
 });

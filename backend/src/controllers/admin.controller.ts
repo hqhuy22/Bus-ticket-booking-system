@@ -3,6 +3,9 @@ import { query } from '../config/db';
 import TripService from '../services/trip.service';
 import TripRepository from '../repositories/trip.repository';
 import RouteRepository from '../repositories/route.repository';
+import BookingService from '../services/booking.service';
+import BookingRepository from '../repositories/booking.repository';
+import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 
 export default class AdminController {
   // Operators
@@ -350,6 +353,106 @@ export default class AdminController {
       const ok = await RouteRepository.deleteRouteStop(stopId);
       if (!ok) return res.status(404).json({ error: 'stop not found' });
       return res.status(204).send();
+    } catch (err: any) {
+      const msg = err && err.message ? String(err.message) : 'internal error';
+      return res.status(500).json({ error: msg });
+    }
+  }
+
+  // Admin booking management
+  static async getAllBookings(req: Request, res: Response) {
+    try {
+      const page = req.query.page ? Math.max(1, parseInt(String(req.query.page), 10) || 1) : 1;
+      const limit = req.query.limit ? Math.max(1, parseInt(String(req.query.limit), 10) || 25) : 25;
+      const offset = (page - 1) * limit;
+
+      const { status, start, end, tripId } = req.query as any;
+
+      const clauses: string[] = [];
+      const params: any[] = [];
+      let idx = 1;
+      if (status) {
+        clauses.push(`status = $${idx++}`);
+        params.push(status);
+      }
+      if (tripId) {
+        clauses.push(`trip_id = $${idx++}`);
+        params.push(tripId);
+      }
+      if (start) {
+        clauses.push(`booked_at >= $${idx++}`);
+        params.push(new Date(start).toISOString());
+      }
+      if (end) {
+        clauses.push(`booked_at <= $${idx++}`);
+        params.push(new Date(end).toISOString());
+      }
+
+      const where = clauses.length > 0 ? 'WHERE ' + clauses.join(' AND ') : '';
+
+      const q = `SELECT * FROM bookings ${where} ORDER BY booked_at DESC LIMIT ${limit} OFFSET ${offset}`;
+      const itemsRes = await query(q, params);
+
+      // total
+      const countQ = `SELECT COUNT(*) as count FROM bookings ${where}`;
+      const countRes = await query(countQ, params);
+      const total = parseInt(countRes.rows[0].count, 10) || 0;
+
+      return res.json({ items: itemsRes.rows, total, page, limit });
+    } catch (err: any) {
+      const msg = err && err.message ? String(err.message) : 'internal error';
+      return res.status(500).json({ error: msg });
+    }
+  }
+
+  static async getBookingById(req: Request, res: Response) {
+    try {
+      const { id } = req.params as any;
+      if (!id) return res.status(400).json({ error: 'missing id' });
+      const booking = await BookingRepository.getBookingById(id);
+      if (!booking) return res.status(404).json({ error: 'not found' });
+      return res.json(booking);
+    } catch (err: any) {
+      const msg = err && err.message ? String(err.message) : 'internal error';
+      return res.status(500).json({ error: msg });
+    }
+  }
+
+  static async cancelBookingAdmin(req: Request, res: Response) {
+    try {
+      const { id } = req.params as any;
+      const body = (req as any).validatedBody ?? req.body;
+      const reason = body?.reason ?? null;
+      const authReq = req as AuthenticatedRequest;
+      if (!authReq.user) return res.status(401).json({ error: 'unauthenticated' });
+
+      // use service to release seats and mark cancelled (service enforces admin check)
+      await BookingService.cancelBooking(id, authReq.user.id);
+
+      // ensure cancellation_reason column exists and store reason
+      await query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS cancellation_reason text;`);
+      await query(`UPDATE bookings SET cancellation_reason = $1 WHERE id = $2`, [reason, id]);
+
+      return res.json({ message: 'cancelled', reason });
+    } catch (err: any) {
+      const msg = err && err.message ? String(err.message) : 'internal error';
+      if (msg.includes('not found')) return res.status(404).json({ error: msg });
+      if (msg.includes('Not authorized') || msg.includes('Not authorized to cancel'))
+        return res.status(403).json({ error: msg });
+      return res.status(400).json({ error: msg });
+    }
+  }
+
+  static async updateBookingStatus(req: Request, res: Response) {
+    try {
+      const { id } = req.params as any;
+      const body = (req as any).validatedBody ?? req.body;
+      const status = body?.status as string;
+      if (!status) return res.status(400).json({ error: 'status is required' });
+
+      const updated = await BookingRepository.updateBookingStatus(id, status);
+      if (!updated) return res.status(404).json({ error: 'not found' });
+      return res.json(updated);
     } catch (err: any) {
       const msg = err && err.message ? String(err.message) : 'internal error';
       return res.status(500).json({ error: msg });

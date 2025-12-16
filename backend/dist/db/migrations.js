@@ -172,7 +172,26 @@ async function runMigrations() {
     seat_id uuid REFERENCES seats(id) ON DELETE CASCADE,
     state text,
     booking_id uuid REFERENCES bookings(id) ON DELETE SET NULL,
-    locked_until timestamptz
+  locked_until timestamptz,
+  lock_owner text
   );
+  `);
+    // Ensure existing databases get the lock_owner column
+    await (0, db_1.query)(`ALTER TABLE seat_statuses ADD COLUMN IF NOT EXISTS lock_owner text;`);
+    // Ensure bookings has optional columns used elsewhere, then create performance indexes
+    await (0, db_1.query)(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS booking_reference text;`);
+    await (0, db_1.query)(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS expires_at timestamptz;`);
+    // Indexes for common lookups / cleanup jobs
+    await (0, db_1.query)(`CREATE INDEX IF NOT EXISTS idx_bookings_user_id ON bookings(user_id);`);
+    await (0, db_1.query)(`CREATE INDEX IF NOT EXISTS idx_bookings_trip_id ON bookings(trip_id);`);
+    await (0, db_1.query)(`CREATE INDEX IF NOT EXISTS idx_bookings_reference ON bookings(booking_reference);`);
+    await (0, db_1.query)(`
+  CREATE INDEX IF NOT EXISTS idx_bookings_status_expires ON bookings(status, expires_at);
+  `);
+    await (0, db_1.query)(`
+  CREATE INDEX IF NOT EXISTS idx_seat_statuses_trip_state ON seat_statuses(trip_id, state);
+  `);
+    await (0, db_1.query)(`
+  CREATE INDEX IF NOT EXISTS idx_passengers_booking_id ON passenger_details(booking_id);
   `);
 }

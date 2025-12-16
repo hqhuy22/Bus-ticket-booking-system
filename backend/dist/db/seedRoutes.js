@@ -55,13 +55,7 @@ dotenv_1.default.config();
         if ((has?.rowCount ?? 0) === 0) {
             const op = await (0, db_1.query)('SELECT id FROM operators LIMIT 1');
             const opId = op?.rows?.[0]?.id ?? null;
-            await (0, db_1.query)('INSERT INTO routes (operator_id, origin, destination, distance_km, estimated_minutes) VALUES ($1,$2,$3,$4,$5)', [
-                opId,
-                'City A',
-                'City B',
-                120,
-                150,
-            ]);
+            await (0, db_1.query)('INSERT INTO routes (operator_id, origin, destination, distance_km, estimated_minutes) VALUES ($1,$2,$3,$4,$5)', [opId, 'City A', 'City B', 120, 150]);
             console.log('Route seeded');
         }
         else {
@@ -75,7 +69,9 @@ dotenv_1.default.config();
         try {
             await db_1.default.end();
         }
-        catch (_) { }
+        catch (_) {
+            // Intentionally ignored
+        }
         process.exit(1);
     }
 })();

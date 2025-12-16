@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.authMiddleware = authMiddleware;
+exports.optionalAuth = optionalAuth;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const tokenBlacklist_1 = require("../utils/tokenBlacklist");
 const JWT_SECRET = process.env.JWT_SECRET || 'devsecret';
@@ -24,4 +25,12 @@ async function authMiddleware(req, res, next) {
     catch (err) {
         return res.status(401).json({ message: 'invalid token' });
     }
+}
+// Optional auth: if Authorization header present, verify and populate req.user.
+// If header is missing, continue as guest.
+async function optionalAuth(req, res, next) {
+    const auth = req.headers.authorization;
+    if (!auth || !auth.startsWith('Bearer '))
+        return next();
+    return authMiddleware(req, res, next);
 }

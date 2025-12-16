@@ -12,7 +12,14 @@ async function run() {
         // eslint-disable-next-line no-console
         console.log('Running migrations...');
         await (0, migrations_1.runMigrations)();
-        const scripts = ['seedOperators', 'seedBuses', 'seedRoutes', 'seedSeats', 'seedTrips', 'seedUsers'];
+        const scripts = [
+            'seedOperators',
+            'seedBuses',
+            'seedRoutes',
+            'seedSeats',
+            'seedTrips',
+            'seedUsers',
+        ];
         for (const s of scripts) {
             // use ts-node if available via npm scripts; fallback to node compiled JS if present
             // We will try to run via ts-node using npx to avoid forcing dependency changes.

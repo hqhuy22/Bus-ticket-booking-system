@@ -18,4 +18,5 @@ export interface SeatStatus {
   state?: string;
   booking_id?: string | null;
   locked_until?: string | null;
+  lock_owner?: string | null;
 }

@@ -54,12 +54,7 @@ dotenv_1.default.config();
     `);
         const res = await (0, db_1.query)('SELECT * FROM operators LIMIT 1');
         if ((res?.rowCount ?? 0) === 0) {
-            await (0, db_1.query)('INSERT INTO operators (name, contact_email, contact_phone, status, approved_at) VALUES ($1,$2,$3,$4,now())', [
-                'Demo Operator',
-                'ops@example.com',
-                '+10000000000',
-                'active',
-            ]);
+            await (0, db_1.query)('INSERT INTO operators (name, contact_email, contact_phone, status, approved_at) VALUES ($1,$2,$3,$4,now())', ['Demo Operator', 'ops@example.com', '+10000000000', 'active']);
             console.log('Operator seeded');
         }
         else {
@@ -73,7 +68,9 @@ dotenv_1.default.config();
         try {
             await db_1.default.end();
         }
-        catch (_) { }
+        catch (_) {
+            // Intentionally ignored
+        }
         process.exit(1);
     }
 })();

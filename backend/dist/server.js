@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const path_1 = __importDefault(require("path"));
+const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const morgan_1 = __importDefault(require("morgan"));
 const routes_1 = __importDefault(require("./routes"));
@@ -21,6 +22,7 @@ catch (e) {
     cookieParser = () => (req, res, next) => next();
 }
 const passport_1 = __importDefault(require("./config/passport"));
+const bookingCleanup_1 = require("./jobs/bookingCleanup");
 // Load environment variables
 dotenv_1.default.config();
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
@@ -30,6 +32,23 @@ app.use(express_1.default.json());
 app.use(cookieParser());
 // initialize passport (strategy configured in src/config/passport.ts)
 app.use(passport_1.default.initialize());
+// Enable CORS for frontend dev server and configured app base URL
+const allowedOrigins = [
+    process.env.APP_BASE_URL || 'http://localhost:3000',
+    'http://localhost:5173',
+];
+app.use((0, cors_1.default)({
+    origin: (origin, callback) => {
+        // allow requests with no origin like curl/postman
+        if (!origin)
+            return callback(null, true);
+        if (allowedOrigins.indexOf(origin) !== -1)
+            return callback(null, true);
+        return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+}));
+app.options('*', (0, cors_1.default)());
 // Serve a small static site (verify page) from src/public
 app.use(express_1.default.static(path_1.default.join(__dirname, 'public')));
 // Explicit route so /verify works (serves src/public/verify.html)
@@ -54,6 +73,12 @@ if (require.main === module) {
                 await (0, migrations_1.runMigrations)();
                 // eslint-disable-next-line no-console
                 console.log('Migrations finished');
+            }
+            // start booking cleanup job in non-test environments
+            if (process.env.NODE_ENV !== 'test') {
+                (0, bookingCleanup_1.setupBookingCleanupJob)();
+                // eslint-disable-next-line no-console
+                console.log('Booking cleanup job started');
             }
             await db_1.default.connect();
             app.listen(PORT, () => {

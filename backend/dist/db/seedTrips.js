@@ -59,12 +59,7 @@ dotenv_1.default.config();
         const has = await (0, db_1.query)('SELECT * FROM trips LIMIT 1');
         if ((has?.rowCount ?? 0) === 0) {
             // Use parameterized times: departure now, arrival +1 hour via PostgreSQL
-            await (0, db_1.query)("INSERT INTO trips (route_id, bus_id, departure_time, arrival_time, base_price, status) VALUES ($1,$2, now(), now() + interval '1 hour', $3, $4)", [
-                routeId,
-                busId,
-                100.0,
-                'scheduled',
-            ]);
+            await (0, db_1.query)("INSERT INTO trips (route_id, bus_id, departure_time, arrival_time, base_price, status) VALUES ($1,$2, now(), now() + interval '1 hour', $3, $4)", [routeId, busId, 100.0, 'scheduled']);
             console.log('Trip seeded');
         }
         else {
@@ -78,7 +73,9 @@ dotenv_1.default.config();
         try {
             await db_1.default.end();
         }
-        catch (_) { }
+        catch (_) {
+            // Intentionally left empty
+        }
         process.exit(1);
     }
 })();

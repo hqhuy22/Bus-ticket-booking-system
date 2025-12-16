@@ -1,6 +1,44 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const db_1 = require("../config/db");
+const crypto_1 = __importDefault(require("crypto"));
+const redis_1 = __importStar(require("../utils/redis"));
 class TripService {
     constructor(tripRepository) {
         this.tripRepo = tripRepository;
@@ -107,6 +145,20 @@ class TripService {
         const updated = await this.tripRepo.updateTrip(tripId, updateDto);
         if (!updated)
             throw new Error('failed to update trip');
+        // Invalidate relevant caches: search results and this trip's seats
+        try {
+            if (redis_1.default && (await (0, redis_1.ensureConnected)())) {
+                // delete all search caches
+                const keys = await redis_1.default.keys('trips:search:*');
+                if (keys && keys.length > 0)
+                    await redis_1.default.del(...keys);
+                // delete this trip's seats cache
+                await redis_1.default.del(`trip:${tripId}:seats`);
+            }
+        }
+        catch (e) {
+            // ignore redis errors and continue
+        }
         return updated;
     }
     // search trips with filters and pagination
@@ -177,6 +229,37 @@ class TripService {
         const page = filters && filters.page && filters.page > 0 ? Math.floor(filters.page) : 1;
         const limit = filters && filters.limit && filters.limit > 0 ? Math.floor(filters.limit) : 25;
         const offset = (page - 1) * limit;
+        // Attempt to serve from cache first using a hash of query params
+        const hashParams = (obj) => {
+            const h = crypto_1.default.createHash('sha1');
+            h.update(JSON.stringify(obj || {}));
+            return h.digest('hex');
+        };
+        const cacheKey = `trips:search:${hashParams({
+            origin,
+            destination,
+            date,
+            filters,
+            page,
+            limit,
+            offset,
+        })}`;
+        try {
+            if (redis_1.default && (await (0, redis_1.ensureConnected)())) {
+                const cached = await redis_1.default.get(cacheKey);
+                if (cached) {
+                    try {
+                        return JSON.parse(cached);
+                    }
+                    catch (e) {
+                        // ignore parse errors and fall through to fetch
+                    }
+                }
+            }
+        }
+        catch (e) {
+            // Redis unavailable or error - fallback to DB
+        }
         const q = `SELECT trips.*, routes.origin, routes.destination, routes.distance_km, routes.estimated_minutes, buses.plate_number, buses.model, buses.seat_capacity
       FROM trips
       LEFT JOIN routes ON routes.id = trips.route_id
@@ -209,12 +292,43 @@ class TripService {
                 : null,
         }));
         const totalPages = Math.ceil(total / limit) || 1;
-        return { trips: items, totalCount: total, page, totalPages };
+        const result = { trips: items, totalCount: total, page, totalPages };
+        // Cache the search result (best-effort). TTL: 60s
+        try {
+            if (redis_1.default && (await (0, redis_1.ensureConnected)())) {
+                await redis_1.default.set(cacheKey, JSON.stringify(result), 'EX', 60);
+            }
+        }
+        catch (e) {
+            // ignore caching errors
+        }
+        return result;
     }
     async getTripDetails(tripId) {
         const details = await this.tripRepo.getTripWithDetails(tripId);
         if (!details)
             throw new Error('trip not found');
+        // Cache seat availability separately (TTL 5s). If cached, use it to avoid DB-heavy seat calculations.
+        try {
+            if (redis_1.default && (await (0, redis_1.ensureConnected)())) {
+                const seatKey = `trip:${tripId}:seats`;
+                const cached = await redis_1.default.get(seatKey);
+                if (cached) {
+                    try {
+                        details.seats = JSON.parse(cached);
+                        return details;
+                    }
+                    catch (e) {
+                        // fallthrough to set fresh cache
+                    }
+                }
+                // store seats snapshot
+                await redis_1.default.set(seatKey, JSON.stringify(details.seats || []), 'EX', 5);
+            }
+        }
+        catch (e) {
+            // ignore redis errors and return details
+        }
         return details;
     }
 }
