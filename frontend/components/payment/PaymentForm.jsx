@@ -107,16 +107,24 @@ export default function PaymentForm() {
   const validate = () => {
     const formErrors = {};
     if (!formData.card_type) formErrors.card_type = "Card type is required";
-    if (!formData.expiry_date) formErrors.expiry_date = "Month is required";
+
+    const expMonth = Number.parseInt(formData.expiry_date, 10);
+    if (!formData.expiry_date) {
+      formErrors.expiry_date = "Month is required";
+    } else if (Number.isNaN(expMonth) || expMonth < 1 || expMonth > 12) {
+      formErrors.expiry_date = "Expiration month is invalid";
+    }
+
     if (!formData.exp_year) {
       formErrors.exp_year = "Expiration year is required";
     } else {
-      const expYear = parseInt(formData.exp_year, 10);
-      const expMonth = parseInt(formData.expiry_date, 10);
-      if (
-        Number.isNaN(expYear) ||
-        expYear < currentYear ||
-        (expYear === currentYear && expMonth < new Date().getMonth() + 1)
+      const expYear = Number.parseInt(formData.exp_year, 10);
+      if (Number.isNaN(expYear) || formData.exp_year.length !== 4) {
+        formErrors.exp_year = "Expiration year is invalid";
+      } else if (
+        !formErrors.expiry_date &&
+        (expYear < currentYear ||
+          (expYear === currentYear && expMonth < new Date().getMonth() + 1))
       ) {
         formErrors.exp_year = "Expiration date is invalid";
       }
