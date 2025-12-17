@@ -58,14 +58,16 @@ export default function PaymentForm() {
         bookingReference: response.data.bookingReference,
       });
     } catch (error) {
-      alert(error.response?.data?.message || "Failed to create payment session");
+      alert(
+        error.response?.data?.message || "Failed to create payment session"
+      );
       navigate("/bus-booking/search-buses");
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchPaymentSession = async sessionId => {
+  const fetchPaymentSession = async (sessionId) => {
     setLoading(true);
     try {
       const response = await axiosInstance.get(`/api/payments/${sessionId}`);
@@ -97,9 +99,9 @@ export default function PaymentForm() {
     });
   };
 
-  const inputDataChange = event => {
+  const inputDataChange = (event) => {
     const { name, value } = event.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const validate = () => {
@@ -144,7 +146,7 @@ export default function PaymentForm() {
     return Object.keys(formErrors).length === 0;
   };
 
-  const handlePay = async event => {
+  const handlePay = async (event) => {
     event.preventDefault();
     if (!validate()) return;
 
@@ -207,11 +209,11 @@ export default function PaymentForm() {
         <form onSubmit={handlePay} className="space-y-4">
           <div className="bg-blue-50 border-l-4 border-info-500 p-4">
             <p className="text-sm text-info-800">
-              <strong>Amount to Pay:</strong> {paymentSession.currency} {" "}
+              <strong>Amount to Pay:</strong> {paymentSession.currency}{" "}
               {parseFloat(paymentSession.amount).toFixed(2)}
             </p>
             <p className="text-xs text-info-600 mt-1">
-              Booking Reference: {" "}
+              Booking Reference:{" "}
               {booking?.bookingReference || paymentSession.bookingReference}
             </p>
           </div>
@@ -236,7 +238,9 @@ export default function PaymentForm() {
                 <option value="amex">American Express</option>
               </select>
               {errors.card_type && (
-                <p className="text-xs text-error-500 mt-1">{errors.card_type}</p>
+                <p className="text-xs text-error-500 mt-1">
+                  {errors.card_type}
+                </p>
               )}
             </div>
 
@@ -274,7 +278,9 @@ export default function PaymentForm() {
                   ))}
                 </select>
                 {errors.expiry_date && (
-                  <p className="text-xs text-error-500 mt-1">{errors.expiry_date}</p>
+                  <p className="text-xs text-error-500 mt-1">
+                    {errors.expiry_date}
+                  </p>
                 )}
               </div>
 
@@ -337,7 +343,9 @@ export default function PaymentForm() {
       {showCancelConfirm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
           <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full space-y-3">
-            <h3 className="text-lg font-semibold text-gray-800">Cancel payment?</h3>
+            <h3 className="text-lg font-semibold text-gray-800">
+              Cancel payment?
+            </h3>
             <p className="text-sm text-gray-600">
               Your seat reservation may expire if you leave this page.
             </p>

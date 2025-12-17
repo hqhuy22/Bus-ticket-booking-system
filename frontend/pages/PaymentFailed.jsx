@@ -17,9 +17,17 @@ export default function PaymentFailed() {
       ];
     }
     return [
-      `Seats: ${Array.isArray(booking.seatNumbers) ? booking.seatNumbers.join(", ") : booking.seatNumbers || "N/A"}`,
+      `Seats: ${
+        Array.isArray(booking.seatNumbers)
+          ? booking.seatNumbers.join(", ")
+          : booking.seatNumbers || "N/A"
+      }`,
       `${booking.departure || "Departure"} - ${booking.arrival || "Arrival"}`,
-      `${booking.journeyDate ? new Date(booking.journeyDate).toLocaleDateString() : new Date().toLocaleDateString()}`,
+      `${
+        booking.journeyDate
+          ? new Date(booking.journeyDate).toLocaleDateString()
+          : new Date().toLocaleDateString()
+      }`,
     ];
   })();
 
@@ -49,11 +57,14 @@ export default function PaymentFailed() {
 
         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded w-full">
           <p className="text-xs text-yellow-800 text-center">
-            💡 <strong>Tip:</strong> Make sure your card has sufficient funds and is activated for online transactions.
+            💡 <strong>Tip:</strong> Make sure your card has sufficient funds
+            and is activated for online transactions.
           </p>
         </div>
 
-        <p className="text-sm font-semibold text-error-500 tracking-wide">Need help? Hotline: 0001</p>
+        <p className="text-sm font-semibold text-error-500 tracking-wide">
+          Need help? Hotline: 0001
+        </p>
 
         <button
           className="capitalize text-sm rounded-lg sm:px-6 sm:py-2 px-4 py-1 bg-info-600 text-white shadow-lg hover:bg-info-700 transition-colors"
@@ -63,14 +74,20 @@ export default function PaymentFailed() {
         </button>
 
         <ul className="text-center space-y-0.5 text-black font-normal tracking-wide capitalize">
-          {["Thank you", "Bus Ticket Booking System", "Secure Payment Gateway"].map((item, index) => (
+          {[
+            "Thank you",
+            "Bus Ticket Booking System",
+            "Secure Payment Gateway",
+          ].map((item, index) => (
             <li key={index} className="text-sm">
               {item}
             </li>
           ))}
         </ul>
 
-        <p className="text-sm font-semibold text-info-800">support@busticket.com</p>
+        <p className="text-sm font-semibold text-info-800">
+          support@busticket.com
+        </p>
       </div>
     </div>
   );

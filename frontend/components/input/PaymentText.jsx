@@ -15,7 +15,7 @@ export default function PaymentText({
   sourceURL,
   disabled = false,
 }) {
-  const handleCardNumberChange = e => {
+  const handleCardNumberChange = (e) => {
     let val = e.target.value.replace(/\D/g, "").slice(0, 16);
     val = val.replace(/(.{4})(?=.)/g, "$1 ");
     onChange({ target: { name: id, value: val } });
