@@ -87,10 +87,20 @@ export function calculateBookingPrice(pricePerSeat, numSeats, options = {}) {
 }
 
 export function formatCurrency(amount, includeSymbol = true) {
-  const numAmount = parseFloat(amount) || 0;
-  const formatted = new Intl.NumberFormat("vi-VN").format(
-    Math.round(numAmount)
-  );
+  const numAmount = Number.parseFloat(amount);
+  const safeAmount = Number.isFinite(numAmount) ? numAmount : 0;
+
+  const formatted = new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: CURRENCY.CODE,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })
+    .format(Math.round(safeAmount))
+    // Keep legacy "amount symbol" output the rest of the app expects.
+    .replace(`${CURRENCY.SYMBOL}`, "")
+    .trim();
+
   return includeSymbol ? `${formatted} ${CURRENCY.SYMBOL}` : formatted;
 }
 
