@@ -1,29 +1,36 @@
-import { useState, useEffect, useCallback } from "react";
-import { User, Phone, Mail } from "lucide-react";
-import PropTypes from "prop-types";
-import TextInput from "../input/TextInput";
+import { useState, useEffect, useCallback } from 'react';
+import { User, Phone, Mail } from 'lucide-react';
+import PropTypes from 'prop-types';
+import TextInput from '../input/TextInput';
 
+/**
+ * Passenger Information Form Component
+ * Collects passenger details for each selected seat
+ */
 export default function PassengerForm({
   seatNumbers,
   onPassengersChange,
   initialData = [],
 }) {
   const [passengers, setPassengers] = useState(() => {
+    // Initialize with existing data or empty forms
     return seatNumbers.map(
       (seatNo, index) =>
         initialData[index] || {
           seatNumber: seatNo,
-          name: "",
-          age: "",
-          gender: "",
-          phone: "",
-          email: "",
+          name: '',
+          age: '',
+          gender: '',
+          phone: '',
+          email: '',
         }
     );
   });
+
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
+    // Notify parent of changes
     onPassengersChange(passengers);
   }, [passengers, onPassengersChange]);
 
@@ -35,6 +42,7 @@ export default function PassengerForm({
     };
     setPassengers(updatedPassengers);
 
+    // Clear error for this field
     const errorKey = `${index}-${field}`;
     if (errors[errorKey]) {
       const newErrors = { ...errors };
@@ -46,24 +54,29 @@ export default function PassengerForm({
   const validatePassenger = (passenger, index) => {
     const passengerErrors = {};
 
-    if (!passenger.name.trim())
-      passengerErrors[`${index}-name`] = "Name is required";
-    if (!passenger.age || passenger.age < 1 || passenger.age > 120)
-      passengerErrors[`${index}-age`] = "Valid age is required (1-120)";
-    if (!passenger.gender)
-      passengerErrors[`${index}-gender`] = "Gender is required";
+    if (!passenger.name.trim()) {
+      passengerErrors[`${index}-name`] = 'Name is required';
+    }
+
+    if (!passenger.age || passenger.age < 1 || passenger.age > 120) {
+      passengerErrors[`${index}-age`] = 'Valid age is required (1-120)';
+    }
+
+    if (!passenger.gender) {
+      passengerErrors[`${index}-gender`] = 'Gender is required';
+    }
 
     if (!passenger.phone.trim()) {
-      passengerErrors[`${index}-phone`] = "Phone number is required";
+      passengerErrors[`${index}-phone`] = 'Phone number is required';
     } else if (!/^\+?[\d\s-()]+$/.test(passenger.phone)) {
-      passengerErrors[`${index}-phone`] = "Invalid phone number";
+      passengerErrors[`${index}-phone`] = 'Invalid phone number';
     }
 
     if (
       passenger.email &&
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(passenger.email)
     ) {
-      passengerErrors[`${index}-email`] = "Invalid email address";
+      passengerErrors[`${index}-email`] = 'Invalid email address';
     }
 
     return passengerErrors;
@@ -79,16 +92,17 @@ export default function PassengerForm({
     return Object.keys(allErrors).length === 0;
   }, [passengers]);
 
+  // Expose validation function to parent
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (window.validatePassengers) {
       window.validatePassengers = validateAllPassengers;
     }
   }, [passengers, validateAllPassengers]);
 
-  const copyToAll = (index) => {
+  const copyToAll = index => {
     const sourcePassenger = passengers[index];
     const confirmed = window.confirm(
-      "Copy contact details to all passengers? (Name and age will not be copied)"
+      'Copy contact details to all passengers? (Name and age will not be copied)'
     );
 
     if (confirmed) {
@@ -107,8 +121,8 @@ export default function PassengerForm({
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold text-gray-800">Passenger Details</h2>
         <span className="text-sm text-gray-600">
-          {passengers.length}{" "}
-          {passengers.length === 1 ? "Passenger" : "Passengers"}
+          {passengers.length}{' '}
+          {passengers.length === 1 ? 'Passenger' : 'Passengers'}
         </span>
       </div>
 
@@ -117,6 +131,7 @@ export default function PassengerForm({
           key={`passenger-${index}`}
           className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm"
         >
+          {/* Header */}
           <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-info-500 text-white rounded-full flex items-center justify-center font-bold">
@@ -127,7 +142,7 @@ export default function PassengerForm({
                   Passenger {index + 1}
                 </h3>
                 <p className="text-sm text-gray-600">
-                  Seat Number:{" "}
+                  Seat Number:{' '}
                   <span className="font-semibold text-info-600">
                     {passenger.seatNumber}
                   </span>
@@ -145,7 +160,9 @@ export default function PassengerForm({
             )}
           </div>
 
+          {/* Form Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Name */}
             <div className="lg:col-span-1">
               <TextInput
                 id={`name-${index}`}
@@ -153,14 +170,13 @@ export default function PassengerForm({
                 label="Full Name *"
                 placeholder="Enter full name"
                 value={passenger.name}
-                onChange={(e) =>
-                  handleInputChange(index, "name", e.target.value)
-                }
+                onChange={e => handleInputChange(index, 'name', e.target.value)}
                 error={errors[`${index}-name`]}
                 icon={<User size={18} className="text-gray-400" />}
               />
             </div>
 
+            {/* Age */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Age *
@@ -170,13 +186,11 @@ export default function PassengerForm({
                 min="1"
                 max="120"
                 value={passenger.age}
-                onChange={(e) =>
-                  handleInputChange(index, "age", e.target.value)
-                }
+                onChange={e => handleInputChange(index, 'age', e.target.value)}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-info-500 ${
                   errors[`${index}-age`]
-                    ? "border-error-500"
-                    : "border-gray-300"
+                    ? 'border-error-500'
+                    : 'border-gray-300'
                 }`}
                 placeholder="Age"
               />
@@ -187,19 +201,20 @@ export default function PassengerForm({
               )}
             </div>
 
+            {/* Gender */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Gender *
               </label>
               <select
                 value={passenger.gender}
-                onChange={(e) =>
-                  handleInputChange(index, "gender", e.target.value)
+                onChange={e =>
+                  handleInputChange(index, 'gender', e.target.value)
                 }
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-info-500 ${
                   errors[`${index}-gender`]
-                    ? "border-error-500"
-                    : "border-gray-300"
+                    ? 'border-error-500'
+                    : 'border-gray-300'
                 }`}
               >
                 <option value="">Select Gender</option>
@@ -214,21 +229,25 @@ export default function PassengerForm({
               )}
             </div>
 
+            {/* ID field removed per UX request */}
+
+            {/* Phone */}
             <div>
               <TextInput
                 id={`phone-${index}`}
                 name={`phone-${index}`}
                 label="Phone Number *"
-                placeholder="+84 912 345 678"
+                placeholder="+94 77 123 4567"
                 value={passenger.phone}
-                onChange={(e) =>
-                  handleInputChange(index, "phone", e.target.value)
+                onChange={e =>
+                  handleInputChange(index, 'phone', e.target.value)
                 }
                 error={errors[`${index}-phone`]}
                 icon={<Phone size={18} className="text-gray-400" />}
               />
             </div>
 
+            {/* Email */}
             <div>
               <TextInput
                 id={`email-${index}`}
@@ -237,13 +256,15 @@ export default function PassengerForm({
                 placeholder="email@example.com"
                 type="email"
                 value={passenger.email}
-                onChange={(e) =>
-                  handleInputChange(index, "email", e.target.value)
+                onChange={e =>
+                  handleInputChange(index, 'email', e.target.value)
                 }
                 error={errors[`${index}-email`]}
                 icon={<Mail size={18} className="text-gray-400" />}
               />
             </div>
+
+            {/* nationality removed as per UX request */}
           </div>
         </div>
       ))}

@@ -1,0 +1,25 @@
+# AI Guidance
+
+- System: full-stack bus ticketing with React/Vite frontend (`bus-booking-client/`) and Express/Sequelize backend (`bus-booking-server/`), PostgreSQL primary DB, optional Redis/cache noted in docs.
+- Key docs: high-level in [README.md](README.md); architecture and flows (booking/auth/seat locking) in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); database operations in [database/README.md](database/README.md); deployment/Docker in [DOCKER_GUIDE.md](DOCKER_GUIDE.md) and [DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md).
+- Backend entry: [bus-booking-server/index.js](bus-booking-server/index.js) boots Express, runs `migrateBookingSchema` then `sequelize.sync({ alter: true })`, enables CORS from `CLIENT_URL`, sessions, Passport OAuth, Swagger at `/api-docs`, and starts trip reminders + microservices. API base is `/api`; seat routes are also mirrored at `/seats`.
+- Backend style: ESM (`type: "module"`), Sequelize models with associations imported globally. Use layered flow `routes -> controllers -> services -> models`. Keep middleware chain for validation/authn/authz; reuse existing service utilities (email, pricing, seat locking) instead of duplicating logic.
+- Data migrations: Prefer SQL files under [database/migrations/](database/migrations/) for production; `npm run sync-db` (dev-only) drops/resyncs tables. `scripts/migrate_booking_schema.js` handles booking enums safely and runs automatically on boot.
+- Seeds/utilities: `npm run seed` seeds core data; `npm run reset-seats` clears seat locks. Additional helper scripts live in [bus-booking-server/scripts/](bus-booking-server/scripts/) (e.g., create test bookings/reviews); read headers before running.
+- Backend commands (run inside `bus-booking-server/`): `npm run dev` starts nodemon; `npm test` or `test:unit`/`test:integration` (Jest ESM with `NODE_ENV=test` set via scripts); `npm run lint` / `lint:fix`; `npm run format` for Prettier.
+- Env: copy [.env.example](bus-booking-server/.env.example) to `.env`. Critical vars: PG_* or DATABASE_URL, `JWT_SECRET`, `SESSION_SECRET`, `CLIENT_URL`, `SERVER_URL`, email provider settings, Google OAuth, `GEMINI_API_KEY` (default model `gemini-2.0-flash-exp`), optional `OPENAI_API_KEY`, `QUIET_LOGS=true` to silence startup noise.
+- Frontend entry: Vite app in [bus-booking-client/src/main.jsx](bus-booking-client/src/main.jsx) wrapping `App`. Routing/layout/components live under `pages/`, `layouts/`, `components/`; state via Redux Toolkit slices in `redux/`. API config in `config/`; theme tokens in `theme/`. Keep Tailwind + custom design system consistent.
+- Frontend commands (inside `bus-booking-client/`): `npm run dev` (Vite), `npm run build`, `npm run preview`, `npm run lint`/`lint:fix`, `npm run format` for Prettier.
+- End-to-end local workflow (non-Docker): install root deps, then server/client deps separately; create DB `bus_booking_db` (or `bus_booking` per docs) and run `npm run sync-db` or apply SQL migrations; start backend on 4000 and frontend on 5173.
+- Docker workflow: copy `.env.docker` -> `.env`, edit secrets, then `./docker-setup.bat` (Win) or `./docker-setup.sh` (Unix) or `docker-compose up --build`. Services exposed: FE 3000, API 4000, Swagger `/api-docs`, PgAdmin 5050.
+- Testing notes: Jest uses experimental VM modules; avoid mixing CommonJS. Integration tests expect running Postgres; mock app helper lives in `__tests__/helpers/testApp.js`.
+- API behaviors: payment and seat-lock flows rely on 15-min hold, then booking creation and payment confirmation (see flow in docs). Payment sandbox supports failure simulation flags in controllers. Notifications/email templates in `config/emailTemplates.js`; uploads served from `/uploads`.
+- Background jobs: `initializeTripReminderScheduler()` schedules reminders (cron via node-cron). Be careful when altering timing or cancellation logic in `utils/tripReminderScheduler.js` as it runs on startup.
+- Microservices folder (`bus-booking-server/microservices/`) auto-initialized on boot; keep interfaces stable when adding new services/endpoints to avoid breaking `initializeMicroservices()` wiring.
+- CI/CD: workflows in [.github/workflows/](.github/workflows/) run lint/tests and build Docker; follow existing scripts/hooks (husky + lint-staged) to keep formatting consistent.
+- Deployment defaults: frontend targets Vercel, backend Render; configs in [vercel.json](vercel.json), [render.yaml](render.yaml), and docker-compose.prod.yml. Update both sides when changing API base URLs.
+- When adding features, mirror FE/BE contracts: update OpenAPI ([docs/openapi.yaml](docs/openapi.yaml)) and Swagger config, plus Redux slices/hooks that consume endpoints.
+- Keep documentation current (docs/ folder) when introducing schema or endpoint changes; database README expects migration table updated.
+- Security: do not commit secrets; use strong JWT/session secrets; ensure CORS origins match `CLIENT_URL`; sessions use secure cookies in production.
+
+Feedback welcome—tell me if any sections feel thin or if other workflows should be captured.

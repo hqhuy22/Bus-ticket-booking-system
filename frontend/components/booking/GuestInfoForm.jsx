@@ -1,20 +1,29 @@
-import { useState } from "react";
-import { User, Mail, Phone } from "lucide-react";
-import PropTypes from "prop-types";
+import { useState } from 'react';
+import { User, Mail, Phone } from 'lucide-react';
+import PropTypes from 'prop-types';
 
+/**
+ * Guest Information Form Component
+ * Collects minimal required info for guest checkout
+ */
 export default function GuestInfoForm({ onGuestInfoChange, initialData = {} }) {
   const [guestInfo, setGuestInfo] = useState({
-    name: initialData.name || "",
-    email: initialData.email || "",
-    phone: initialData.phone || "",
+    name: initialData.name || '',
+    email: initialData.email || '',
+    phone: initialData.phone || '',
   });
+
   const [errors, setErrors] = useState({});
 
   const handleInputChange = (field, value) => {
-    const updatedInfo = { ...guestInfo, [field]: value };
+    const updatedInfo = {
+      ...guestInfo,
+      [field]: value,
+    };
     setGuestInfo(updatedInfo);
     onGuestInfoChange(updatedInfo);
 
+    // Clear error for this field
     if (errors[field]) {
       const newErrors = { ...errors };
       delete newErrors[field];
@@ -24,18 +33,29 @@ export default function GuestInfoForm({ onGuestInfoChange, initialData = {} }) {
 
   const validate = () => {
     const newErrors = {};
-    if (!guestInfo.name.trim()) newErrors.name = "Name is required";
-    if (!guestInfo.email.trim()) newErrors.email = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestInfo.email))
-      newErrors.email = "Invalid email";
-    if (!guestInfo.phone.trim()) newErrors.phone = "Phone number is required";
-    else if (!/^\+?[\d\s-()]+$/.test(guestInfo.phone))
-      newErrors.phone = "Invalid phone number";
+
+    if (!guestInfo.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+
+    if (!guestInfo.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestInfo.email)) {
+      newErrors.email = 'Invalid email address';
+    }
+
+    if (!guestInfo.phone.trim()) {
+      newErrors.phone = 'Phone number is required';
+    } else if (!/^\+?[\d\s-()]+$/.test(guestInfo.phone)) {
+      newErrors.phone = 'Invalid phone number';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  if (typeof window !== "undefined") {
+  // Expose validation to parent
+  if (typeof window !== 'undefined') {
     window.validateGuestInfo = validate;
   }
 
@@ -52,6 +72,7 @@ export default function GuestInfoForm({ onGuestInfoChange, initialData = {} }) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Name */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Full Name *
@@ -63,9 +84,9 @@ export default function GuestInfoForm({ onGuestInfoChange, initialData = {} }) {
             <input
               type="text"
               value={guestInfo.name}
-              onChange={(e) => handleInputChange("name", e.target.value)}
+              onChange={e => handleInputChange('name', e.target.value)}
               className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-info-500 ${
-                errors.name ? "border-error-500" : "border-gray-300"
+                errors.name ? 'border-error-500' : 'border-gray-300'
               }`}
               placeholder="Enter your full name"
             />
@@ -75,6 +96,7 @@ export default function GuestInfoForm({ onGuestInfoChange, initialData = {} }) {
           )}
         </div>
 
+        {/* Email */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Email Address *
@@ -86,9 +108,9 @@ export default function GuestInfoForm({ onGuestInfoChange, initialData = {} }) {
             <input
               type="email"
               value={guestInfo.email}
-              onChange={(e) => handleInputChange("email", e.target.value)}
+              onChange={e => handleInputChange('email', e.target.value)}
               className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-info-500 ${
-                errors.email ? "border-error-500" : "border-gray-300"
+                errors.email ? 'border-error-500' : 'border-gray-300'
               }`}
               placeholder="your.email@example.com"
             />
@@ -98,6 +120,7 @@ export default function GuestInfoForm({ onGuestInfoChange, initialData = {} }) {
           )}
         </div>
 
+        {/* Phone */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Phone Number *
@@ -109,9 +132,9 @@ export default function GuestInfoForm({ onGuestInfoChange, initialData = {} }) {
             <input
               type="tel"
               value={guestInfo.phone}
-              onChange={(e) => handleInputChange("phone", e.target.value)}
+              onChange={e => handleInputChange('phone', e.target.value)}
               className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-info-500 ${
-                errors.phone ? "border-error-500" : "border-gray-300"
+                errors.phone ? 'border-error-500' : 'border-gray-300'
               }`}
               placeholder="+1 (555) 123-4567"
             />

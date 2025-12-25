@@ -1,13 +1,17 @@
-import { useState, useEffect, useRef } from "react";
-import PropTypes from "prop-types";
-import { FaMapMarkerAlt, FaTimes } from "react-icons/fa";
+import { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
+import { FaMapMarkerAlt, FaTimes } from 'react-icons/fa';
 
+/**
+ * City Autocomplete Component
+ * Provides autocomplete functionality for city selection
+ */
 export default function CityAutocomplete({
   cities = [],
-  value = "",
+  value = '',
   onChange,
-  placeholder = "Search city...",
-  label = "City",
+  placeholder = 'Search city...',
+  label = 'City',
   error = false,
   icon: Icon = FaMapMarkerAlt,
   disabled = false,
@@ -17,47 +21,54 @@ export default function CityAutocomplete({
   const [inputValue, setInputValue] = useState(value);
   const wrapperRef = useRef(null);
 
+  // Handle clicks outside to close dropdown
   useEffect(() => {
     function handleClickOutside(event) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
         setIsOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Update input value when prop changes
   useEffect(() => {
     setInputValue(value);
   }, [value]);
 
+  // Filter cities based on input
   useEffect(() => {
-    if (inputValue.trim() === "") {
+    if (inputValue.trim() === '') {
       setFilteredCities(cities);
     } else {
-      const filtered = cities.filter((city) =>
+      const filtered = cities.filter(city =>
         city.toLowerCase().includes(inputValue.toLowerCase())
       );
       setFilteredCities(filtered);
     }
   }, [inputValue, cities]);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = e => {
     const newValue = e.target.value;
     setInputValue(newValue);
     setIsOpen(true);
     onChange(newValue);
   };
 
-  const handleSelectCity = (city) => {
+  const handleSelectCity = city => {
     setInputValue(city);
     onChange(city);
     setIsOpen(false);
   };
 
   const handleClear = () => {
-    setInputValue("");
-    onChange("");
+    setInputValue('');
+    onChange('');
+    setIsOpen(true);
+  };
+
+  const handleFocus = () => {
     setIsOpen(true);
   };
 
@@ -78,12 +89,12 @@ export default function CityAutocomplete({
           type="text"
           value={inputValue}
           onChange={handleInputChange}
-          onFocus={() => setIsOpen(true)}
+          onFocus={handleFocus}
           placeholder={placeholder}
           disabled={disabled}
           className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 hover:outline-none focus:outline-none transition-all ${
-            error ? "border-error-500 ring-2 ring-red-500" : "border-gray-300"
-          } ${disabled ? "bg-gray-100 cursor-not-allowed" : ""}`}
+            error ? 'border-error-500 ring-2 ring-red-500' : 'border-gray-300'
+          } ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
           autoComplete="off"
         />
 
@@ -97,6 +108,7 @@ export default function CityAutocomplete({
           </button>
         )}
 
+        {/* Dropdown */}
         {isOpen && filteredCities.length > 0 && !disabled && (
           <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
             {filteredCities.map((city, index) => (
@@ -112,6 +124,7 @@ export default function CityAutocomplete({
           </div>
         )}
 
+        {/* No results */}
         {isOpen && filteredCities.length === 0 && inputValue && !disabled && (
           <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
             <div className="px-4 py-3 text-gray-500 text-sm text-center">

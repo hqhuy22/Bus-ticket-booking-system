@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   Calendar,
@@ -8,8 +8,12 @@ import {
   CheckCircle,
   XCircle,
   Loader,
-} from "lucide-react";
+} from 'lucide-react';
 
+/**
+ * Guest Booking Details Page
+ * Displays booking information for guest bookings
+ */
 export default function GuestBookingDetails() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -26,7 +30,7 @@ export default function GuestBookingDetails() {
             Please search for your booking first.
           </p>
           <button
-            onClick={() => navigate("/bus-booking/guest-lookup")}
+            onClick={() => navigate('/bus-booking/guest-lookup')}
             className="px-6 py-3 bg-info-600 text-white rounded-lg hover:bg-info-700"
           >
             Search for Booking
@@ -36,41 +40,43 @@ export default function GuestBookingDetails() {
     );
   }
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = status => {
     const badges = {
       pending: {
-        bg: "bg-yellow-100",
-        text: "text-yellow-800",
+        bg: 'bg-yellow-100',
+        text: 'text-yellow-800',
         icon: Loader,
-        label: "Pending Payment",
+        label: 'Pending Payment',
       },
       confirmed: {
-        bg: "bg-green-100",
-        text: "text-green-800",
+        bg: 'bg-green-100',
+        text: 'text-green-800',
         icon: CheckCircle,
-        label: "Confirmed",
+        label: 'Confirmed',
       },
       cancelled: {
-        bg: "bg-red-100",
-        text: "text-red-800",
+        bg: 'bg-red-100',
+        text: 'text-red-800',
         icon: XCircle,
-        label: "Cancelled",
+        label: 'Cancelled',
       },
       expired: {
-        bg: "bg-gray-100",
-        text: "text-gray-800",
+        bg: 'bg-gray-100',
+        text: 'text-gray-800',
         icon: XCircle,
-        label: "Expired",
+        label: 'Expired',
       },
       completed: {
-        bg: "bg-blue-100",
-        text: "text-info-800",
+        bg: 'bg-blue-100',
+        text: 'text-info-800',
         icon: CheckCircle,
-        label: "Completed",
+        label: 'Completed',
       },
     };
+
     const badge = badges[status] || badges.pending;
     const Icon = badge.icon;
+
     return (
       <span
         className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold ${badge.bg} ${badge.text}`}
@@ -81,13 +87,13 @@ export default function GuestBookingDetails() {
     );
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = dateString => {
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
       });
     } catch {
       return dateString;
@@ -97,9 +103,10 @@ export default function GuestBookingDetails() {
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-12 px-4">
       <div className="max-w-4xl mx-auto">
+        {/* Header */}
         <div className="mb-6">
           <button
-            onClick={() => navigate("/bus-booking/guest-lookup")}
+            onClick={() => navigate('/bus-booking/guest-lookup')}
             className="flex items-center gap-2 text-info-600 hover:text-info-700 mb-4"
           >
             <ArrowLeft size={20} />
@@ -119,11 +126,14 @@ export default function GuestBookingDetails() {
           </div>
         </div>
 
+        {/* Journey Information */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">
             Journey Information
           </h2>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Route */}
             <div>
               <div className="flex items-start gap-3">
                 <MapPin className="text-info-600 mt-1" size={20} />
@@ -141,6 +151,7 @@ export default function GuestBookingDetails() {
               </div>
             </div>
 
+            {/* Date */}
             <div>
               <div className="flex items-start gap-3">
                 <Calendar className="text-info-600 mt-1" size={20} />
@@ -153,6 +164,7 @@ export default function GuestBookingDetails() {
               </div>
             </div>
 
+            {/* Departure Time */}
             <div>
               <div className="flex items-start gap-3">
                 <Clock className="text-info-600 mt-1" size={20} />
@@ -165,6 +177,7 @@ export default function GuestBookingDetails() {
               </div>
             </div>
 
+            {/* Arrival Time */}
             <div>
               <div className="flex items-start gap-3">
                 <Clock className="text-info-600 mt-1" size={20} />
@@ -178,6 +191,7 @@ export default function GuestBookingDetails() {
             </div>
           </div>
 
+          {/* Pickup & Dropoff */}
           {(booking.pickupPoint || booking.dropoffPoint) && (
             <div className="mt-6 pt-6 border-t border-gray-200">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -202,11 +216,13 @@ export default function GuestBookingDetails() {
           )}
         </div>
 
+        {/* Passenger Information */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <Users size={24} />
             Passenger Details
           </h2>
+
           <div className="space-y-4">
             {booking.passengers &&
               booking.passengers.map((passenger, index) => (
@@ -225,60 +241,120 @@ export default function GuestBookingDetails() {
                       • Seat {passenger.seatNumber}
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 ml-10 text-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 ml-10">
                     <div>
                       <p className="text-xs text-gray-600">Age</p>
-                      <p className="font-medium">{passenger.age}</p>
+                      <p className="text-sm font-medium">{passenger.age}</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-600">Gender</p>
-                      <p className="font-medium capitalize">
+                      <p className="text-sm font-medium capitalize">
                         {passenger.gender}
                       </p>
                     </div>
                     {passenger.phone && (
                       <div>
                         <p className="text-xs text-gray-600">Phone</p>
-                        <p className="font-medium">{passenger.phone}</p>
+                        <p className="text-sm font-medium">{passenger.phone}</p>
                       </div>
                     )}
                     {passenger.email && (
                       <div>
                         <p className="text-xs text-gray-600">Email</p>
-                        <p className="font-medium">{passenger.email}</p>
+                        <p className="text-sm font-medium">{passenger.email}</p>
                       </div>
                     )}
                   </div>
                 </div>
               ))}
           </div>
+
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <p className="text-sm text-gray-600">
+              Total Seats:{' '}
+              <span className="font-semibold">
+                {booking.seatNumbers?.length || 0}
+              </span>
+              {booking.seatNumbers && booking.seatNumbers.length > 0 && (
+                <span className="ml-2">({booking.seatNumbers.join(', ')})</span>
+              )}
+            </p>
+          </div>
         </div>
 
+        {/* Payment Information */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">
             Payment Summary
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-700">
-            <div className="p-4 border rounded-lg">
-              <p className="text-gray-500 text-xs">Base Fare</p>
-              <p className="text-lg font-semibold">
-                {booking.payment_busFare?.toLocaleString()} ₫
-              </p>
+
+          <div className="space-y-3">
+            <div className="flex justify-between text-gray-700">
+              <span>Bus Fare</span>
+              <span>
+                ₱{parseFloat(booking.payment_busFare || 0).toFixed(2)}
+              </span>
             </div>
-            <div className="p-4 border rounded-lg">
-              <p className="text-gray-500 text-xs">Convenience Fee</p>
-              <p className="text-lg font-semibold">
-                {booking.payment_convenienceFee?.toLocaleString()} ₫
-              </p>
+            <div className="flex justify-between text-gray-700">
+              <span>Convenience Fee</span>
+              <span>
+                ₱{parseFloat(booking.payment_convenienceFee || 0).toFixed(2)}
+              </span>
             </div>
-            <div className="p-4 border rounded-lg">
-              <p className="text-gray-500 text-xs">Total Paid</p>
-              <p className="text-lg font-semibold text-info-700">
-                {booking.payment_totalPay?.toLocaleString()} ₫
-              </p>
+            <div className="flex justify-between text-gray-700">
+              <span>Bank Charges</span>
+              <span>
+                ₱{parseFloat(booking.payment_bankCharge || 0).toFixed(2)}
+              </span>
+            </div>
+            <div className="pt-3 border-t border-gray-200">
+              <div className="flex justify-between text-lg font-bold text-gray-800">
+                <span>Total Amount</span>
+                <span>
+                  ₱{parseFloat(booking.payment_totalPay || 0).toFixed(2)}
+                </span>
+              </div>
             </div>
           </div>
+
+          {booking.paymentReference && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <p className="text-sm text-gray-600">
+                Payment Reference:{' '}
+                <span className="font-semibold">
+                  {booking.paymentReference}
+                </span>
+              </p>
+            </div>
+          )}
         </div>
+
+        {/* Status Messages */}
+        {booking.status === 'pending' && (
+          <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-yellow-800">
+              <strong>Action Required:</strong> Your booking is pending payment.
+              Please complete the payment to confirm your booking.
+            </p>
+          </div>
+        )}
+
+        {booking.status === 'expired' && (
+          <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <p className="text-gray-800">
+              This booking has expired. Please create a new booking if you still
+              wish to travel.
+            </p>
+          </div>
+        )}
+
+        {booking.status === 'cancelled' && booking.cancellationReason && (
+          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-800">
+              <strong>Cancellation Reason:</strong> {booking.cancellationReason}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

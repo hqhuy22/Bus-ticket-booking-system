@@ -4,9 +4,9 @@
  */
 
 export const CURRENCY = {
-  CODE: "VND",
-  SYMBOL: "₫",
-  NAME: "Vietnamese Dong",
+  CODE: 'VND',
+  SYMBOL: '₫',
+  NAME: 'Vietnamese Dong',
   DECIMAL_PLACES: 0,
 };
 

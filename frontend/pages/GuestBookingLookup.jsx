@@ -1,43 +1,63 @@
-import { useState } from "react";
-import { Search, Mail, Ticket } from "lucide-react";
-import axiosInstance from "../utils/axiosConfig";
+import { useState } from 'react';
+import { Search, Mail, Ticket } from 'lucide-react';
+import axiosInstance from '../utils/axiosConfig';
 
+/**
+ * Guest Booking Lookup Page
+ * Allows guests to retrieve their bookings using reference and contact info
+ */
 export default function GuestBookingLookup() {
-  const [formData, setFormData] = useState({ bookingReference: "", email: "" });
+  // no client-side navigation needed for verification-only flow
+  const [formData, setFormData] = useState({
+    bookingReference: '',
+    email: '',
+  });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
-  const [sentTo, setSentTo] = useState("");
+  const [sentTo, setSentTo] = useState('');
 
   const handleInputChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    setError("");
+    setFormData(prev => ({
+      ...prev,
+      [field]: value,
+    }));
+    setError('');
   };
 
-  const handleLookup = async (e) => {
+  const handleLookup = async e => {
     e.preventDefault();
-    setError("");
+    setError('');
+
+    // Validate
     if (!formData.bookingReference.trim()) {
-      setError("Please enter your booking reference");
+      setError('Please enter your booking reference');
       return;
     }
+
     if (!formData.email.trim()) {
-      setError("Please enter your email address");
+      setError('Please enter your email address');
       return;
     }
+
     try {
       setLoading(true);
+
       const payload = {
         bookingReference: formData.bookingReference.trim(),
         email: formData.email.trim(),
       };
-      await axiosInstance.post("/api/bookings/guest/lookup/request", payload);
+
+      // Request a one-time verification email from the server
+      await axiosInstance.post('/api/bookings/guest/lookup/request', payload);
+
       setSent(true);
       setSentTo(formData.email.trim());
     } catch (err) {
+      console.error('Booking lookup request error:', err);
       setError(
         err.response?.data?.message ||
-          "Unable to send verification email. Please check your booking reference and email."
+          'Unable to send verification email. Please check your booking reference and email.'
       );
     } finally {
       setLoading(false);
@@ -62,6 +82,7 @@ export default function GuestBookingLookup() {
 
         <div className="bg-white rounded-lg shadow-md p-8">
           <form onSubmit={handleLookup}>
+            {/* Booking Reference */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Booking Reference *
@@ -73,9 +94,9 @@ export default function GuestBookingLookup() {
                 <input
                   type="text"
                   value={formData.bookingReference}
-                  onChange={(e) =>
+                  onChange={e =>
                     handleInputChange(
-                      "bookingReference",
+                      'bookingReference',
                       e.target.value.toUpperCase()
                     )
                   }
@@ -89,6 +110,7 @@ export default function GuestBookingLookup() {
               </p>
             </div>
 
+            {/* Email Input (verification-only flow) */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address *
@@ -100,16 +122,18 @@ export default function GuestBookingLookup() {
                 <input
                   type="email"
                   value={formData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  onChange={e => handleInputChange('email', e.target.value)}
                   className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-info-500"
                   placeholder="your.email@example.com"
                 />
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                We will send a one-time verification link to this email.
+                We will send a one-time verification link to this email. Only
+                after verification will you be able to view the booking.
               </p>
             </div>
 
+            {/* Error Message or Sent Confirmation */}
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-red-800 text-sm">{error}</p>
@@ -120,12 +144,13 @@ export default function GuestBookingLookup() {
               <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-green-800 text-sm">
                   A verification email was sent to <strong>{sentTo}</strong>.
-                  Please check your inbox and click the verification link. The
-                  link expires in 15 minutes.
+                  Please check your inbox and click the verification link to
+                  view your booking. The link expires in 15 minutes.
                 </p>
               </div>
             )}
 
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading || sent}
@@ -137,7 +162,7 @@ export default function GuestBookingLookup() {
                   Sending...
                 </>
               ) : sent ? (
-                "Verification Sent"
+                'Verification Sent'
               ) : (
                 <>
                   <Search size={20} />
@@ -146,6 +171,23 @@ export default function GuestBookingLookup() {
               )}
             </button>
           </form>
+
+          {/* Help Text */}
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">
+              Need Help?
+            </h3>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>
+                • Your booking reference was sent to your email after booking
+              </li>
+              <li>
+                • Make sure to use the same email or phone number you used when
+                booking
+              </li>
+              <li>• Booking references are case-insensitive</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>

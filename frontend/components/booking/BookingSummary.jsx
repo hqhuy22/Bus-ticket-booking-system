@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 import {
   Calendar,
   Clock,
@@ -6,10 +6,13 @@ import {
   Users,
   CreditCard,
   AlertCircle,
-} from "lucide-react";
-import { formatCurrency } from "../../utils/pricingCalculator";
-import PropTypes from "prop-types";
+} from 'lucide-react';
+import { formatCurrency } from '../../utils/pricingCalculator';
 
+/**
+ * Booking Summary Component
+ * Displays trip details, passengers, and cost breakdown
+ */
 export default function BookingSummary({
   bookingData,
   onProceedToPayment,
@@ -23,9 +26,11 @@ export default function BookingSummary({
 
   if (!bookingData) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <p className="text-gray-500">No booking data available</p>
-      </div>
+      <>
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <p className="text-gray-500">No booking data available</p>
+        </div>
+      </>
     );
   }
 
@@ -34,8 +39,8 @@ export default function BookingSummary({
     seatNumbers = [],
     passengers = [],
     pricing = {},
-    lockExpiresAt,
   } = bookingData;
+
   const {
     busFare = 0,
     convenienceFee = 0,
@@ -45,6 +50,7 @@ export default function BookingSummary({
 
   return (
     <div className="space-y-6">
+      {/* Trip Summary */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
           <MapPin className="text-info-500" size={24} />
@@ -55,13 +61,13 @@ export default function BookingSummary({
           <div>
             <p className="text-sm text-gray-600">From</p>
             <p className="text-lg font-semibold text-gray-800">
-              {schedule?.departure || "N/A"}
+              {schedule?.departure || 'N/A'}
             </p>
           </div>
           <div>
             <p className="text-sm text-gray-600">To</p>
             <p className="text-lg font-semibold text-gray-800">
-              {schedule?.arrival || "N/A"}
+              {schedule?.arrival || 'N/A'}
             </p>
           </div>
           <div>
@@ -69,7 +75,7 @@ export default function BookingSummary({
               <Calendar size={16} /> Journey Date
             </p>
             <p className="text-lg font-semibold text-gray-800">
-              {schedule?.journeyDate || "N/A"}
+              {schedule?.journeyDate || 'N/A'}
             </p>
           </div>
           <div>
@@ -77,46 +83,41 @@ export default function BookingSummary({
               <Clock size={16} /> Departure Time
             </p>
             <p className="text-lg font-semibold text-gray-800">
-              {schedule?.departureTime || "N/A"}
+              {schedule?.departureTime || 'N/A'}
             </p>
           </div>
           <div>
             <p className="text-sm text-gray-600">Bus Route</p>
             <p className="text-lg font-semibold text-gray-800">
               {schedule?.routeName ||
-                (schedule?.routeNo ? `Route #${schedule.routeNo}` : "N/A")}
+                (schedule?.routeNo ? `Route #${schedule.routeNo}` : 'N/A')}
             </p>
           </div>
           <div>
             <p className="text-sm text-gray-600">Depot</p>
             <p className="text-lg font-semibold text-gray-800">
-              {schedule?.depotName || "N/A"}
+              {schedule?.depotName || 'N/A'}
             </p>
           </div>
         </div>
-
+        {/* Pickup / Drop-off (selected in Booking Details) */}
         <div className="mt-4 grid md:grid-cols-2 gap-4">
           <div>
             <p className="text-sm text-gray-600">Pickup</p>
             <p className="text-lg font-semibold text-gray-800">
-              {bookingData.pickupPoint || pickupPoint || "N/A"}
+              {bookingData.pickupPoint || pickupPoint || 'N/A'}
             </p>
           </div>
           <div>
             <p className="text-sm text-gray-600">Drop-off</p>
             <p className="text-lg font-semibold text-gray-800">
-              {bookingData.dropoffPoint || dropoffPoint || "N/A"}
+              {bookingData.dropoffPoint || dropoffPoint || 'N/A'}
             </p>
           </div>
         </div>
-
-        {typeof lockExpiresAt === "number" && (
-          <div className="mt-4 text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-lg p-3">
-            Seat lock active. Time remaining: {lockExpiresAt} seconds.
-          </div>
-        )}
       </div>
 
+      {/* Seat & Passenger Information */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
           <Users className="text-info-500" size={24} />
@@ -168,6 +169,7 @@ export default function BookingSummary({
                     {passenger.gender}
                   </span>
                 </div>
+                {/* ID removed from summary display */}
                 <div className="col-span-2">
                   <span className="text-gray-600">Phone:</span>
                   <span className="ml-2 font-medium">{passenger.phone}</span>
@@ -184,6 +186,7 @@ export default function BookingSummary({
         </div>
       </div>
 
+      {/* Price Breakdown */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
           <CreditCard className="text-info-500" size={24} />
@@ -194,7 +197,7 @@ export default function BookingSummary({
           <div className="flex justify-between items-center">
             <span className="text-gray-600">
               Bus Fare ({seatNumbers.length} seat
-              {seatNumbers.length > 1 ? "s" : ""})
+              {seatNumbers.length > 1 ? 's' : ''})
             </span>
             <span className="font-semibold">{formatCurrency(busFare)}</span>
           </div>
@@ -221,8 +224,11 @@ export default function BookingSummary({
         </div>
       </div>
 
+      {/* Pickup & Dropoff selection removed from booking review */}
+
       {showActions && (
         <>
+          {/* Terms & Conditions */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <div className="flex items-start gap-3">
               <AlertCircle className="text-yellow-600 mt-1" size={20} />
@@ -246,24 +252,26 @@ export default function BookingSummary({
             </div>
           </div>
 
+          {/* Agreement Checkbox */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={agreed}
-                onChange={(e) => setAgreed(e.target.checked)}
+                onChange={e => setAgreed(e.target.checked)}
                 className="mt-1 w-5 h-5 text-info-600 border-gray-300 rounded focus:ring-blue-500"
               />
               <span className="text-sm text-gray-700">
-                I agree to the{" "}
+                I agree to the{' '}
                 <a href="#" className="text-info-600 hover:underline">
                   Terms and Conditions
-                </a>{" "}
+                </a>{' '}
                 and confirm that all passenger information provided is accurate.
               </span>
             </label>
           </div>
 
+          {/* Action Buttons */}
           <div className="flex gap-4">
             <button
               type="button"
@@ -279,7 +287,7 @@ export default function BookingSummary({
               disabled={!agreed || isLoading}
               className="flex-1 px-6 py-3 bg-info-600 text-white rounded-lg hover:bg-info-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? "Processing..." : "Proceed to Payment"}
+              {isLoading ? 'Processing...' : 'Proceed to Payment'}
             </button>
           </div>
         </>
@@ -287,13 +295,3 @@ export default function BookingSummary({
     </div>
   );
 }
-
-BookingSummary.propTypes = {
-  bookingData: PropTypes.object,
-  onProceedToPayment: PropTypes.func,
-  onGoBack: PropTypes.func,
-  isLoading: PropTypes.bool,
-  pickupPoint: PropTypes.string,
-  dropoffPoint: PropTypes.string,
-  showActions: PropTypes.bool,
-};

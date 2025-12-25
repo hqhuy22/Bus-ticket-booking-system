@@ -1,20 +1,21 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { FaBus } from "react-icons/fa";
-import CityAutocomplete from "../input/CityAutocomplete";
-import VN_CITIES from "../../utils/vnCities";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FaBus } from 'react-icons/fa';
+import CityAutocomplete from '../input/CityAutocomplete';
+import VN_CITIES from '../../utils/vnCities';
 
 export default function SearchForm() {
-  const [pickupPoint, setPickupPoint] = useState("");
-  const [droppingPoint, setDroppingPoint] = useState("");
-  const [departureDate, setDepartureDate] = useState("");
+  const [pickupPoint, setPickupPoint] = useState('');
+  const [droppingPoint, setDroppingPoint] = useState('');
+  const [departureDate, setDepartureDate] = useState('');
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
-  const handleSearch = (e) => {
+  const handleSearch = e => {
     e.preventDefault();
 
-    const formErrors = {};
+    // Validation
+    let formErrors = {};
     if (!pickupPoint) formErrors.pickupPoint = true;
     if (!droppingPoint) formErrors.droppingPoint = true;
     if (!departureDate) formErrors.departureDate = true;
@@ -24,15 +25,16 @@ export default function SearchForm() {
       return;
     }
 
-    navigate("/bus-booking/search-buses", {
+    navigate('/bus-booking/search-buses', {
       state: { pickupPoint, droppingPoint, departureDate },
     });
   };
 
+  // Get tomorrow's date as minimum
   const getTomorrowDate = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split("T")[0];
+    return tomorrow.toISOString().split('T')[0];
   };
 
   return (
@@ -44,10 +46,7 @@ export default function SearchForm() {
         <CityAutocomplete
           cities={VN_CITIES}
           value={pickupPoint}
-          onChange={(v) => {
-            setPickupPoint(v);
-            setErrors((prev) => ({ ...prev, pickupPoint: false }));
-          }}
+          onChange={setPickupPoint}
           placeholder="Select pickup city"
           label="From"
           error={errors.pickupPoint}
@@ -56,10 +55,7 @@ export default function SearchForm() {
         <CityAutocomplete
           cities={VN_CITIES}
           value={droppingPoint}
-          onChange={(v) => {
-            setDroppingPoint(v);
-            setErrors((prev) => ({ ...prev, droppingPoint: false }));
-          }}
+          onChange={setDroppingPoint}
           placeholder="Select dropping city"
           label="To"
           error={errors.droppingPoint}
@@ -72,15 +68,15 @@ export default function SearchForm() {
           <input
             type="date"
             value={departureDate}
-            onChange={(e) => {
+            onChange={e => {
               setDepartureDate(e.target.value);
-              setErrors((prev) => ({ ...prev, departureDate: false }));
+              setErrors(prev => ({ ...prev, departureDate: false }));
             }}
             min={getTomorrowDate()}
             className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none ${
               errors.departureDate
-                ? "border-error-500 ring-2 ring-error-500"
-                : "border-gray-300"
+                ? 'border-error-500 ring-2 ring-error-500'
+                : 'border-gray-300'
             }`}
           />
         </div>
