@@ -127,19 +127,31 @@ export const generateChatResponse = async (messages, systemPrompt = 'general') =
     const response = result.response;
     return response.text();
   } catch (error) {
-    console.error('Gemini API Error:', error.message);
+    console.error('❌ Gemini API Error:', error.message);
+    console.error('Error details:', {
+      errorType: error.constructor.name,
+      statusCode: error.status,
+      apiKey: process.env.GEMINI_API_KEY
+        ? `✅ Set (${process.env.GEMINI_API_KEY.substring(0, 10)}...)`
+        : '❌ Missing',
+      model: MODEL,
+    });
 
     // Fallback response when quota exceeded or API error
     if (
       error.message.includes('quota') ||
       error.message.includes('429') ||
-      error.message.includes('API key')
+      error.message.includes('API key') ||
+      error.message.includes('PERMISSION_DENIED') ||
+      error.message.includes('invalid') ||
+      error.status === 429 ||
+      error.status === 403
     ) {
       console.warn('⚠️ Gemini API issue - using fallback response');
       return getFallbackResponse(messages, systemPrompt);
     }
 
-    throw new Error('Failed to generate AI response');
+    throw new Error('Failed to generate AI response: ' + error.message);
   }
 };
 

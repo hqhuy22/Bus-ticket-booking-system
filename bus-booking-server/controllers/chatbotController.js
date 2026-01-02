@@ -123,8 +123,17 @@ export const sendMessage = async (req, res) => {
       searchResults,
     });
   } catch (error) {
-    console.error('Send message error:', error);
-    res.status(500).json({ error: 'Failed to process message' });
+    console.error('❌ Send message error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      geminiApiKey: process.env.GEMINI_API_KEY ? '✅ Set' : '❌ Missing',
+      geminiModel: process.env.GEMINI_MODEL || 'Not set',
+    });
+    res.status(500).json({
+      error: 'Failed to process message',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
   }
 };
 
