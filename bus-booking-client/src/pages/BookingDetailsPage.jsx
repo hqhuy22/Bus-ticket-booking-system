@@ -8,6 +8,8 @@ import {
   AlertCircle,
   XCircle,
   Mail,
+  Info,
+  Clock,
 } from 'lucide-react';
 import axiosInstance from '../utils/axiosConfig';
 import BookingSummary from '../components/booking/BookingSummary';
@@ -17,6 +19,10 @@ import {
   TripStatusIndicator,
   TripTimeline,
 } from '../components/trip/TripStatusComponents';
+import {
+  calculateCancellationFee,
+  formatCurrency,
+} from '../utils/pricingCalculator';
 
 /**
  * Booking Details Page
@@ -36,6 +42,8 @@ export default function BookingDetails() {
   const [emailingTicket, setEmailingTicket] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareEmail, setShareEmail] = useState('');
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
 
   // Real-time trip status updates (only for confirmed/completed bookings)
   const shouldEnableTripStatus =
@@ -65,20 +73,65 @@ export default function BookingDetails() {
     fetchBookingDetails();
   }, [id]);
 
+  // Calculate refund information
+  const getRefundInfo = booking => {
+    if (!booking || !booking.journeyDate || !booking.booking_startTime) {
+      return null;
+    }
+
+    try {
+      // Parse journey date and time - handle different date formats
+      let journeyDateTime;
+
+      // If journeyDate is already a Date object
+      if (booking.journeyDate instanceof Date) {
+        journeyDateTime = new Date(booking.journeyDate);
+      } else {
+        // If it's a string, try to parse it
+        const dateStr = booking.journeyDate.split('T')[0]; // Get just the date part
+        journeyDateTime = new Date(`${dateStr}T${booking.booking_startTime}`);
+      }
+
+      const now = new Date();
+      const hoursBeforeDeparture = (journeyDateTime - now) / (1000 * 60 * 60);
+
+      if (hoursBeforeDeparture < 0) {
+        return {
+          canCancel: false,
+          message: 'Cannot cancel - trip has already departed',
+          refundInfo: null,
+        };
+      }
+
+      const totalPay = parseFloat(booking.payment_totalPay) || 0;
+      const refundInfo = calculateCancellationFee(
+        totalPay,
+        hoursBeforeDeparture
+      );
+
+      return {
+        canCancel: true,
+        hoursBeforeDeparture: Math.floor(hoursBeforeDeparture),
+        refundInfo,
+      };
+    } catch (error) {
+      console.error('Error calculating refund:', error);
+      return null;
+    }
+  };
+
   const handleCancelBooking = async () => {
-    const confirmed = window.confirm(
-      'Are you sure you want to cancel this booking? This action cannot be undone.'
-    );
+    // Show modal instead of direct confirm
+    setShowCancelModal(true);
+  };
 
-    if (!confirmed) return;
-
+  const confirmCancelBooking = async () => {
     try {
       setCancelling(true);
       await axiosInstance.post(`/api/bookings/${id}/cancel`, {
-        reason: 'Cancelled by user from booking details',
+        reason: cancelReason || 'Cancelled by user from booking details',
       });
 
-      // Refresh booking details
       // Refresh booking details
       try {
         const resp = await axiosInstance.get(`/api/bookings/${id}`);
@@ -86,6 +139,9 @@ export default function BookingDetails() {
       } catch (e) {
         console.error('Failed to refresh booking after cancel:', e);
       }
+
+      setShowCancelModal(false);
+      setCancelReason('');
       alert('Booking cancelled successfully');
     } catch (err) {
       console.error('Error cancelling booking:', err);
@@ -597,6 +653,183 @@ export default function BookingDetails() {
                 className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Booking Modal with Refund Policy */}
+      {showCancelModal && booking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[50] p-4">
+          <div className="bg-white rounded-lg max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">
+              Cancel Booking
+            </h3>
+
+            <div className="mb-4">
+              <p className="text-gray-700 mb-2">
+                Are you sure you want to cancel booking{' '}
+                <strong>{booking.bookingReference}</strong>?
+              </p>
+              <p className="text-sm text-gray-600 mb-4">
+                Route: {booking.departure} → {booking.arrival}
+              </p>
+
+              {/* Refund Policy Display */}
+              {(() => {
+                const refundData = getRefundInfo(booking);
+
+                if (!refundData) {
+                  return (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                      <div className="flex items-start gap-2">
+                        <Info
+                          className="text-yellow-600 mt-0.5 flex-shrink-0"
+                          size={20}
+                        />
+                        <p className="text-sm text-yellow-800">
+                          Unable to calculate refund information. Please contact
+                          support.
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (!refundData.canCancel) {
+                  return (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                      <div className="flex items-start gap-2">
+                        <XCircle
+                          className="text-red-600 mt-0.5 flex-shrink-0"
+                          size={20}
+                        />
+                        <p className="text-sm text-red-800 font-medium">
+                          {refundData.message}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+
+                const { refundInfo, hoursBeforeDeparture } = refundData;
+
+                return (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <div className="flex items-start gap-2 mb-3">
+                      <Info
+                        className="text-blue-600 mt-0.5 flex-shrink-0"
+                        size={20}
+                      />
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-blue-900 mb-2">
+                          Refund Policy
+                        </h4>
+
+                        {/* Time remaining */}
+                        <div className="text-sm text-blue-800 mb-3">
+                          <p className="flex items-center gap-1">
+                            <Clock size={16} />
+                            <span>
+                              <strong>{hoursBeforeDeparture} hours</strong>{' '}
+                              remaining before departure
+                            </span>
+                          </p>
+                        </div>
+
+                        {/* Refund breakdown */}
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-blue-800">
+                              Original Amount:
+                            </span>
+                            <span className="font-semibold text-blue-900">
+                              {formatCurrency(refundInfo.totalPay)}
+                            </span>
+                          </div>
+
+                          <div className="flex justify-between">
+                            <span className="text-blue-800">
+                              Refund Rate:{' '}
+                              {(refundInfo.refundRate * 100).toFixed(0)}%
+                            </span>
+                            <span
+                              className={`font-semibold ${refundInfo.refundRate > 0 ? 'text-green-600' : 'text-red-600'}`}
+                            >
+                              {refundInfo.refundRate > 0 ? '✓' : '✗'}
+                            </span>
+                          </div>
+
+                          {refundInfo.cancellationFee > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-blue-800">
+                                Cancellation Fee:
+                              </span>
+                              <span className="font-semibold text-red-600">
+                                - {formatCurrency(refundInfo.cancellationFee)}
+                              </span>
+                            </div>
+                          )}
+
+                          <div className="border-t border-blue-300 pt-2 mt-2">
+                            <div className="flex justify-between">
+                              <span className="font-semibold text-blue-900">
+                                You will receive:
+                              </span>
+                              <span className="font-bold text-lg text-green-600">
+                                {formatCurrency(refundInfo.refundAmount)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Policy explanation */}
+                        <div className="mt-3 pt-3 border-t border-blue-200">
+                          <p className="text-xs text-blue-700 font-medium mb-1">
+                            Cancellation Policy:
+                          </p>
+                          <ul className="text-xs text-blue-700 space-y-1">
+                            <li>• 24+ hours before: 100% refund</li>
+                            <li>• 12-24 hours before: 50% refund</li>
+                            <li>• Less than 12 hours: No refund</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Reason for cancellation (optional)
+              </label>
+              <textarea
+                value={cancelReason}
+                onChange={e => setCancelReason(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                rows="3"
+                placeholder="Please provide a reason..."
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setCancelReason('');
+                }}
+                disabled={cancelling}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Keep Booking
+              </button>
+              <button
+                onClick={confirmCancelBooking}
+                disabled={cancelling || !getRefundInfo(booking)?.canCancel}
+                className="flex-1 px-4 py-2 bg-error-600 text-white rounded-lg hover:bg-error-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {cancelling ? 'Cancelling...' : 'Cancel Booking'}
               </button>
             </div>
           </div>
