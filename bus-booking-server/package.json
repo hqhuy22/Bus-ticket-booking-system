@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
+    "start:prod": "npm run sync-db && npm run seed && node index.js",
     "server": "nodemon index.js",
     "dev": "nodemon index.js",
     "sync-db": "node ./scripts/sync_db.js",
