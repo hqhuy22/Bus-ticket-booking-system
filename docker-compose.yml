@@ -1,0 +1,145 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: bus-booking-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PG_USER:-postgres}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-postgres}
+      POSTGRES_DB: ${PG_DATABASE:-bus_booking_db}
+      POSTGRES_HOST_AUTH_METHOD: ${POSTGRES_HOST_AUTH_METHOD:-scram-sha-256}
+    ports:
+      - "${PG_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/backups:/backups
+      # Initialize scripts (optional)
+      # - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - bus-booking-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-postgres} -d ${PG_DATABASE:-bus_booking_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API Server
+  backend:
+    build:
+      context: ./bus-booking-server
+      dockerfile: Dockerfile
+      target: ${NODE_ENV:-development}
+    container_name: bus-booking-backend
+    restart: unless-stopped
+    ports:
+      - "${PORT:-4000}:4000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 4000
+      # Database
+      PG_HOST: postgres
+      PG_PORT: 5432
+      PG_USER: ${PG_USER:-postgres}
+      PG_PASSWORD: ${PG_PASSWORD:-postgres}
+      PG_DATABASE: ${PG_DATABASE:-bus_booking_db}
+      # JWT & Session
+      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-this}
+      SESSION_SECRET: ${SESSION_SECRET:-your-session-secret-change-this}
+      # URLs
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:3000}
+      SERVER_URL: ${SERVER_URL:-http://localhost:4000}
+      # Email
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-gmail}
+      EMAIL_SERVICE: ${EMAIL_SERVICE:-gmail}
+      EMAIL_USER: ${EMAIL_USER:-}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+      # Google OAuth
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL:-http://localhost:4000/api/auth/google/callback}
+      # AI/Chatbot
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash-exp}
+      CHATBOT_MAX_HISTORY: ${CHATBOT_MAX_HISTORY:-20}
+      # Logging
+      QUIET_LOGS: ${QUIET_LOGS:-false}
+      SQL_LOGGING: ${SQL_LOGGING:-false}
+    volumes:
+      # Mount source code for development hot-reload
+      - ./bus-booking-server:/app
+      - /app/node_modules
+      # Persistent uploads
+      - uploads_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bus-booking-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4000/', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend React Application
+  frontend:
+    build:
+      context: ./bus-booking-client
+      dockerfile: Dockerfile
+      target: ${NODE_ENV:-development}
+    container_name: bus-booking-frontend
+    restart: unless-stopped
+    ports:
+      - "${CLIENT_PORT:-3000}:${FRONTEND_INTERNAL_PORT:-5173}"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:4000}
+    volumes:
+      # Mount source code for development hot-reload
+      - ./bus-booking-client:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - bus-booking-network
+    stdin_open: true
+    tty: true
+
+  # PgAdmin (Optional - for database management)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: bus-booking-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@admin.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - bus-booking-network
+    profiles:
+      - tools
+
+# Volumes for persistent data
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+  uploads_data:
+    driver: local
+
+# Networks
+networks:
+  bus-booking-network:
+    driver: bridge

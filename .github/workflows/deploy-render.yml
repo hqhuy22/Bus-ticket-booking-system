@@ -1,0 +1,1107 @@
+# 🚀 HƯỚNG DẪN DEPLOY TỪNG BƯỚC - VERCEL + RENDER + NEON
+
+## 📋 Mục lục
+1. [Giới thiệu Stack](#giới-thiệu-stack)
+2. [Chuẩn bị](#bước-0-chuẩn-bị)
+3. [Deploy Database (Neon)](#bước-1-deploy-database-neon)
+4. [Deploy Backend (Render)](#bước-2-deploy-backend-render)
+5. [Deploy Frontend (Vercel)](#bước-3-deploy-frontend-vercel)
+6. [Kết nối Services](#bước-4-kết-nối-services)
+7. [Testing](#bước-5-testing)
+8. [Setup CI/CD](#bước-6-setup-cicd-github-actions)
+
+---
+
+## 🎯 Giới thiệu Stack
+
+```
+┌─────────────────────────────────────────────┐
+│  FRONTEND (React + Vite)                    │
+│  Platform: Vercel                           │
+│  Cost: FREE (Unlimited)                     │
+│  URL: https://your-app.vercel.app           │
+└─────────────────┬───────────────────────────┘
+                  │ API Calls
+                  ▼
+┌─────────────────────────────────────────────┐
+│  BACKEND (Node.js + Express)                │
+│  Platform: Render                           │
+│  Cost: FREE (750 hours/month)               │
+│  URL: https://your-backend.onrender.com     │
+└─────────────────┬───────────────────────────┘
+                  │ Database Queries
+                  ▼
+┌─────────────────────────────────────────────┐
+│  DATABASE (PostgreSQL)                      │
+│  Platform: Neon                             │
+│  Cost: FREE (3GB storage)                   │
+│  Connection: Serverless                     │
+└─────────────────────────────────────────────┘
+                  ▲
+                  │ Auto Deploy
+┌─────────────────┴───────────────────────────┐
+│  CI/CD (GitHub Actions)                     │
+│  Platform: GitHub                           │
+│  Cost: FREE (2000 min/month)                │
+└─────────────────────────────────────────────┘
+```
+
+### ✨ Tại sao chọn stack này?
+
+**Vercel (Frontend):**
+- ✅ Deploy cực nhanh (< 1 phút)
+- ✅ Global CDN tự động
+- ✅ Zero configuration cho Vite/React
+- ✅ Unlimited bandwidth (free tier)
+- ✅ Auto SSL/HTTPS
+- ✅ Preview deployments cho mỗi PR
+
+**Render (Backend):**
+- ✅ Dễ setup hơn Railway
+- ✅ 750 hours/month free (đủ chạy 1 service 24/7)
+- ✅ Tự động deploy từ GitHub
+- ✅ Build & deploy logs chi tiết
+- ✅ Shell access để run migrations
+- ✅ Environment variables management
+- ✅ Health checks tự động
+
+**Neon (Database):**
+- ✅ Serverless PostgreSQL
+- ✅ 3GB storage free
+- ✅ Auto-scaling
+- ✅ Instant database creation
+- ✅ Connection pooling built-in
+- ✅ Branching database (như Git)
+
+**GitHub Actions (CI/CD):**
+- ✅ Tích hợp sẵn với GitHub
+- ✅ 2000 minutes/month free
+- ✅ Auto test và deploy
+- ✅ Workflow dễ customize
+
+**Tổng chi phí: $0/tháng** 🎉
+
+---
+
+## ⏱️ Thời gian ước tính
+
+- **Bước 0** (Chuẩn bị): 5 phút
+- **Bước 1** (Database): 5 phút
+- **Bước 2** (Backend): 15 phút
+- **Bước 3** (Frontend): 10 phút
+- **Bước 4** (Kết nối): 5 phút
+- **Bước 5** (Testing): 5 phút
+- **Bước 6** (CI/CD): 20 phút (optional)
+
+**Tổng: 45-60 phút**
+
+---
+
+## BƯỚC 0: Chuẩn bị
+
+### ✅ Checklist trước khi bắt đầu
+
+```powershell
+# 1. Kiểm tra Node.js version
+node --version
+# Cần: v18.0.0 hoặc cao hơn
+
+# 2. Kiểm tra Git
+git --version
+
+# 3. Chạy pre-deployment check
+node scripts/pre-deploy-check.mjs
+
+# 4. Đảm bảo code đã commit
+git status
+git add .
+git commit -m "Prepare for deployment"
+git push origin main
+```
+
+### 📝 Tài khoản cần tạo
+
+| Platform | URL | Đăng ký bằng |
+|----------|-----|--------------|
+| **GitHub** | https://github.com | Email (hoặc đã có) |
+| **Neon** | https://neon.tech | GitHub account |
+| **Render** | https://render.com | GitHub account |
+| **Vercel** | https://vercel.com | GitHub account |
+
+💡 **Tip:** Dùng cùng 1 GitHub account để đăng ký → dễ quản lý!
+
+### 🔐 Chuẩn bị thông tin
+
+Tạo file `deployment-info.txt` (KHÔNG commit):
+
+```
+deployment-info.txt
+-------------------
+1. Neon Connection String: [sẽ lấy ở bước 1]
+2. Render Backend URL: [sẽ lấy ở bước 2]
+3. Vercel Frontend URL: [sẽ lấy ở bước 3]
+4. Gmail App Password: [nếu dùng Gmail]
+```
+
+---
+
+## BƯỚC 1: Deploy Database (Neon)
+
+### 1.1. Tạo tài khoản Neon
+
+1. **Truy cập:** https://neon.tech
+2. **Click:** "Sign Up"
+3. **Chọn:** "Continue with GitHub"
+4. **Authorize Neon**
+
+```
+┌─────────────────────────────────────┐
+│  Neon - Sign Up                     │
+│                                     │
+│  ┌───────────────────────────┐     │
+│  │  Continue with GitHub     │ ←   │
+│  └───────────────────────────┘     │
+└─────────────────────────────────────┘
+```
+
+### 1.2. Tạo Project mới
+
+1. Click **"Create a project"**
+2. **Điền thông tin:**
+
+```
+Project Name:     bus-booking-db
+PostgreSQL:       16 (latest)
+Region:           Singapore (gần VN nhất)
+```
+
+3. Click **"Create Project"**
+
+```
+┌─────────────────────────────────────────────┐
+│  Create New Project                         │
+│                                             │
+│  Project Name:                              │
+│  ┌─────────────────────────────┐           │
+│  │ bus-booking-db              │           │
+│  └─────────────────────────────┘           │
+│                                             │
+│  Region:                                    │
+│  ┌─────────────────────────────┐           │
+│  │ Singapore (ap-southeast-1)  │ ▼         │
+│  └─────────────────────────────┘           │
+│                                             │
+│  [Create Project]                           │
+└─────────────────────────────────────────────┘
+```
+
+### 1.3. Lấy Connection String
+
+Sau khi project được tạo:
+
+1. **Tìm:** "Connection Details" hoặc "Connection String"
+2. **Copy connection string:**
+
+```
+postgresql://neondb_owner:AbCd1234...@ep-cool-name.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+```
+
+3. **Lưu vào** `deployment-info.txt`
+
+⚠️ **Quan trọng:** 
+- Connection string phải có `?sslmode=require` ở cuối
+- Nếu không có, thêm vào manually
+
+```
+┌─────────────────────────────────────────────────┐
+│  Connection Details                             │
+│                                                 │
+│  Connection String (recommended):               │
+│  ┌───────────────────────────────────────────┐ │
+│  │ postgresql://user:pass@host/db?ssl...     │ │
+│  │                                      [Copy]│ │
+│  └───────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────┘
+```
+
+### 1.4. Test Connection (Optional)
+
+Trong Neon Dashboard → SQL Editor:
+
+```sql
+-- Test query
+SELECT version();
+
+-- Nếu thấy kết quả PostgreSQL version → OK!
+```
+
+✅ **Hoàn thành Bước 1!** Database đã sẵn sàng.
+
+---
+
+## BƯỚC 2: Deploy Backend (Render)
+
+### 2.1. Tạo tài khoản Render
+
+1. **Truy cập:** https://render.com
+2. **Click:** "Get Started" hoặc "Sign Up"
+3. **Chọn:** "GitHub"
+4. **Authorize Render** để truy cập repos
+
+```
+┌─────────────────────────────────────┐
+│  Render - Sign Up                   │
+│                                     │
+│  ┌───────────────────────────┐     │
+│  │  Sign up with GitHub      │ ←   │
+│  └───────────────────────────┘     │
+└─────────────────────────────────────┘
+```
+
+### 2.2. Tạo Web Service mới
+
+1. **Trong Render Dashboard**, click **"New +"**
+2. **Chọn:** "Web Service"
+
+```
+┌─────────────────────────────────────┐
+│  Render Dashboard                   │
+│                                     │
+│  New + ▼                            │
+│    ├── Web Service      ←           │
+│    ├── Static Site                  │
+│    ├── Cron Job                     │
+│    └── ...                          │
+└─────────────────────────────────────┘
+```
+
+3. **Connect Repository:**
+   - Chọn **"Connect a repository"**
+   - Tìm và chọn `bus-ticket-booking-app` repo
+   - Click **"Connect"**
+
+```
+┌─────────────────────────────────────────┐
+│  Connect Repository                     │
+│                                         │
+│  Search repositories:                   │
+│  ┌─────────────────────────────┐       │
+│  │ bus-ticket-booking-app      │ [🔍] │
+│  └─────────────────────────────┘       │
+│                                         │
+│  ✓ bus-ticket-booking-app               │
+│    [Connect]                            │
+└─────────────────────────────────────────┘
+```
+
+### 2.3. Configure Service
+
+Render sẽ hiển thị form configuration:
+
+**1. Basic Settings:**
+
+```
+Name:              bus-booking-backend
+Region:            Singapore (closest to VN)
+Branch:            main
+Root Directory:    bus-booking-server    ← Quan trọng!
+```
+
+```
+┌─────────────────────────────────────────┐
+│  Service Configuration                  │
+│                                         │
+│  Name:                                  │
+│  ┌─────────────────────────────┐       │
+│  │ bus-booking-backend         │       │
+│  └─────────────────────────────┘       │
+│                                         │
+│  Root Directory:                        │
+│  ┌─────────────────────────────┐       │
+│  │ bus-booking-server          │       │ ← Nhập vào đây
+│  └─────────────────────────────┘       │
+└─────────────────────────────────────────┘
+```
+
+**2. Build & Start Commands:**
+
+```
+Build Command:     npm install
+Start Command:     npm start
+```
+
+⚠️ **Chú ý:** Render tự động detect Node.js và các commands này
+
+**3. Plan:**
+
+```
+Instance Type:     Free
+```
+
+```
+┌─────────────────────────────────────────┐
+│  Instance Type                          │
+│                                         │
+│  ○ Starter ($7/month)                   │
+│  ● Free (750 hours/month)       ← Chọn │
+└─────────────────────────────────────────┘
+```
+
+### 2.4. Thêm Environment Variables
+
+Scroll xuống phần **"Environment Variables"**:
+
+Click **"Add Environment Variable"** và thêm:
+
+```bash
+# 1. Node Environment
+NODE_ENV=production
+
+# 2. Port (Render tự động inject PORT, nhưng có thể set)
+PORT=4000
+
+# 3. Database URL (từ Neon)
+DATABASE_URL=postgresql://neondb_owner:xxxxx@ep-xxx.neon.tech/neondb?sslmode=require
+
+# 4. JWT Secret (generate random string)
+JWT_SECRET=your-super-secret-jwt-key-min-32-characters-change-this
+
+# 5. Session Secret (generate random string khác)
+SESSION_SECRET=your-super-secret-session-key-min-32-characters-change-this
+
+# 6. Client URL (tạm thời, sẽ update sau)
+CLIENT_URL=http://localhost:5173
+
+# 7. Server URL (Render sẽ generate, tạm để placeholder)
+SERVER_URL=https://placeholder.onrender.com
+
+# 8. Email Configuration
+EMAIL_PROVIDER=gmail
+EMAIL_SERVICE=gmail
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASSWORD=your-gmail-app-password
+
+# 9. Google OAuth (Optional)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_CALLBACK_URL=
+
+# 10. Gemini AI (Optional)
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-2.0-flash-exp
+
+# 11. Logging
+QUIET_LOGS=false
+SQL_LOGGING=false
+```
+
+**Cách thêm:**
+
+```
+┌─────────────────────────────────────────┐
+│  Environment Variables                  │
+│                                         │
+│  [+ Add Environment Variable]           │
+│                                         │
+│  Key:                                   │
+│  ┌─────────────────────────────┐       │
+│  │ NODE_ENV                    │       │
+│  └─────────────────────────────┘       │
+│                                         │
+│  Value:                                 │
+│  ┌─────────────────────────────┐       │
+│  │ production                  │       │
+│  └─────────────────────────────┘       │
+└─────────────────────────────────────────┘
+```
+
+💡 **Generate JWT_SECRET:**
+
+```powershell
+# Chạy trong PowerShell
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+📧 **Gmail App Password:**
+
+1. https://myaccount.google.com/apppasswords
+2. Tạo app password mới
+3. Copy 16-digit password
+
+### 2.5. Advanced Settings (Quan trọng!)
+
+Scroll xuống **"Advanced"** section:
+
+**1. Health Check Path:**
+
+```
+Health Check Path:    /api/health
+```
+
+Điều này giúp Render biết service đã ready chưa.
+
+**2. Auto-Deploy:**
+
+```
+Auto-Deploy:    Yes    ← Enabled (default)
+```
+
+### 2.6. Create Web Service
+
+1. **Click:** "Create Web Service"
+2. **Render sẽ bắt đầu deploy** (mất 3-5 phút)
+
+```
+┌─────────────────────────────────────────┐
+│  Deployment in Progress...              │
+│                                         │
+│  ▓▓▓▓▓▓▓▓▓░░░░░░░  60%                 │
+│                                         │
+│  Building...                            │
+│  └─ Running npm install                │
+└─────────────────────────────────────────┘
+```
+
+### 2.7. Lấy Render URL
+
+Sau khi deploy thành công:
+
+1. **Trong service page**, tìm URL ở đầu trang
+2. Format: `https://bus-booking-backend.onrender.com`
+3. **Copy và lưu** vào `deployment-info.txt`
+
+```
+┌─────────────────────────────────────────────────┐
+│  bus-booking-backend                            │
+│  https://bus-booking-backend.onrender.com       │
+│  ↑ Copy URL này                                 │
+│                                                 │
+│  Status: ● Live                                 │
+└─────────────────────────────────────────────────┘
+```
+
+### 2.8. Update Environment Variables
+
+1. **Trong service page**, click **"Environment"** tab
+2. **Tìm và edit:**
+
+```
+SERVER_URL=https://bus-booking-backend.onrender.com
+```
+
+3. **Click "Save Changes"**
+4. Render sẽ tự động redeploy
+
+### 2.9. Run Database Migrations
+
+1. **Trong service page**, click **"Shell"** tab
+2. **Trong shell**, chạy:
+
+```bash
+# Sync database tables
+npm run sync-db
+
+# Seed data (optional)
+npm run seed
+```
+
+```
+┌─────────────────────────────────────────┐
+│  Shell                                  │
+│                                         │
+│  $ npm run sync-db                      │
+│  > Syncing database...                  │
+│  ✓ Tables created successfully          │
+│                                         │
+│  $ npm run seed                         │
+│  > Seeding database...                  │
+│  ✓ Data seeded successfully             │
+└─────────────────────────────────────────┘
+```
+
+⚠️ **Lưu ý:** Render Free tier có thể sleep sau 15 phút không hoạt động. Điều này bình thường!
+
+### 2.10. Test Backend
+
+Mở browser và test:
+
+```
+https://bus-booking-backend.onrender.com
+https://bus-booking-backend.onrender.com/api/health
+```
+
+Nếu thấy response → Backend OK! ✅
+
+✅ **Hoàn thành Bước 2!** Backend đã live.
+
+---
+
+## BƯỚC 3: Deploy Frontend (Vercel)
+
+### 3.1. Tạo tài khoản Vercel
+
+1. **Truy cập:** https://vercel.com
+2. **Click:** "Sign Up"
+3. **Chọn:** "Continue with GitHub"
+4. **Authorize Vercel**
+
+```
+┌─────────────────────────────────────┐
+│  Vercel - Sign Up                   │
+│                                     │
+│  ┌───────────────────────────┐     │
+│  │  Continue with GitHub     │ ←   │
+│  └───────────────────────────┘     │
+└─────────────────────────────────────┘
+```
+
+### 3.2. Import Project
+
+1. **Click:** "Add New..." → "Project"
+
+```
+┌─────────────────────────────────────┐
+│  Vercel Dashboard                   │
+│                                     │
+│  Add New... ▼                       │
+│    ├── Project          ←           │
+│    └── ...                          │
+└─────────────────────────────────────┘
+```
+
+2. **Import Git Repository:**
+   - Tìm `bus-ticket-booking-app`
+   - Click **"Import"**
+
+### 3.3. Configure Project
+
+**1. Project Settings:**
+
+```
+Project Name:     bus-booking-app
+Framework:        Vite              (auto-detect)
+Root Directory:   bus-booking-client    ← Click Edit
+```
+
+```
+┌─────────────────────────────────────────┐
+│  Configure Project                      │
+│                                         │
+│  Root Directory:                        │
+│  ┌─────────────────────────────┐       │
+│  │ bus-booking-client   [Edit] │       │ ← Click Edit
+│  └─────────────────────────────┘       │
+└─────────────────────────────────────────┘
+```
+
+**2. Build Settings:** (Auto-detect)
+
+```
+Build Command:        npm run build
+Output Directory:     dist
+Install Command:      npm install
+```
+
+**3. Environment Variables:**
+
+Click **"Environment Variables"** để expand:
+
+```
+Name:   VITE_API_BASE_URL
+Value:  https://bus-booking-backend.onrender.com
+```
+
+```
+┌─────────────────────────────────────────┐
+│  Environment Variables                  │
+│                                         │
+│  Name:                                  │
+│  ┌─────────────────────────────┐       │
+│  │ VITE_API_BASE_URL           │       │
+│  └─────────────────────────────┘       │
+│                                         │
+│  Value:                                 │
+│  ┌─────────────────────────────┐       │
+│  │ https://xxx.onrender.com    │       │ ← Render URL
+│  └─────────────────────────────┘       │
+│                                         │
+│  [Add]                                  │
+└─────────────────────────────────────────┘
+```
+
+⚠️ **Chú ý:**
+- KHÔNG có dấu `/` ở cuối URL
+- Phải prefix `VITE_` để Vite expose biến ra client
+
+### 3.4. Deploy
+
+1. **Click:** "Deploy"
+2. **Vercel sẽ:**
+   - Clone repo
+   - Install dependencies
+   - Build project
+   - Deploy lên CDN global
+
+**Mất khoảng 2-3 phút**
+
+```
+┌─────────────────────────────────────────┐
+│  Building...                            │
+│                                         │
+│  ✓ Cloned repository                    │
+│  ✓ Installed dependencies               │
+│  ▶ Building (Vite)                      │
+│    ▓▓▓▓▓▓▓▓▓▓░░░░  75%                 │
+└─────────────────────────────────────────┘
+```
+
+### 3.5. Lấy Vercel URL
+
+Sau khi deploy thành công:
+
+1. Bạn sẽ thấy **"Congratulations"** screen
+2. URL có dạng:
+
+```
+https://bus-booking-app.vercel.app
+```
+
+3. **Copy và lưu** vào `deployment-info.txt`
+
+```
+┌─────────────────────────────────────────┐
+│  🎉 Your project is live!               │
+│                                         │
+│  https://bus-booking-app.vercel.app     │
+│                                         │
+│  [Visit] [Dashboard]                    │
+└─────────────────────────────────────────┘
+```
+
+✅ **Hoàn thành Bước 3!** Frontend đã live.
+
+---
+
+## BƯỚC 4: Kết nối Services
+
+### 4.1. Update CLIENT_URL trên Render
+
+1. **Vào Render service page**
+2. **Click "Environment" tab**
+3. **Edit biến `CLIENT_URL`:**
+
+```
+CLIENT_URL=https://bus-booking-app.vercel.app
+```
+
+4. **Click "Save Changes"**
+5. Render sẽ tự động redeploy (1-2 phút)
+
+### 4.2. Verify CORS Configuration
+
+File `bus-booking-server/index.js` nên có:
+
+```javascript
+const cors = require('cors');
+
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    process.env.CLIENT_URL,  // Vercel URL
+  ],
+  credentials: true
+}));
+```
+
+Nếu cần sửa, commit và push → Render auto redeploy.
+
+### 4.3. Update OAuth Callbacks (Nếu dùng)
+
+**Google OAuth:**
+
+1. **Google Cloud Console:** https://console.cloud.google.com
+2. **APIs & Services** → **Credentials**
+3. **OAuth 2.0 Client ID** → **Edit**
+4. **Add Authorized redirect URIs:**
+
+```
+https://bus-booking-backend.onrender.com/api/auth/google/callback
+```
+
+5. **Update Render env:**
+
+```
+GOOGLE_CALLBACK_URL=https://bus-booking-backend.onrender.com/api/auth/google/callback
+```
+
+### 4.4. Architecture Overview
+
+```
+┌──────────────────────────────────────────────┐
+│  USER'S BROWSER                              │
+│  Accessing: bus-booking-app.vercel.app       │
+└──────────────────┬───────────────────────────┘
+                   │
+                   │ HTTPS Requests
+                   ▼
+┌──────────────────────────────────────────────┐
+│  VERCEL CDN (Global)                         │
+│  • Serves static React app                   │
+│  • Auto SSL/HTTPS                            │
+│  • Edge caching                              │
+└──────────────────┬───────────────────────────┘
+                   │
+                   │ API Calls
+                   ▼
+┌──────────────────────────────────────────────┐
+│  RENDER (Singapore)                          │
+│  • Node.js API Server                        │
+│  • Environment: production                   │
+│  • CLIENT_URL: vercel.app ✅                 │
+│  • DATABASE_URL: neon.tech ✅                │
+└──────────────────┬───────────────────────────┘
+                   │
+                   │ PostgreSQL Connection
+                   ▼
+┌──────────────────────────────────────────────┐
+│  NEON (Singapore)                            │
+│  • PostgreSQL 16                             │
+│  • Connection pooling                        │
+│  • Auto-scaling                              │
+└──────────────────────────────────────────────┘
+```
+
+✅ **Hoàn thành Bước 4!** Tất cả services đã kết nối.
+
+---
+
+## BƯỚC 5: Testing
+
+### 5.1. Test Backend Health
+
+```
+https://bus-booking-backend.onrender.com/api/health
+```
+
+**Expected:** 
+```json
+{
+  "status": "ok",
+  "timestamp": "..."
+}
+```
+
+### 5.2. Test Frontend
+
+```
+https://bus-booking-app.vercel.app
+```
+
+**Kiểm tra:**
+- [ ] Trang load được
+- [ ] Không có lỗi trong Console (F12)
+- [ ] UI hiển thị đúng
+
+### 5.3. Test API Connection
+
+1. **Mở DevTools** (F12)
+2. **Network tab**
+3. **Thử một tính năng:**
+   - Search buses
+   - Register user
+   - Login
+
+4. **Kiểm tra:**
+   - Request đến Render URL? ✅
+   - Status 200? ✅
+   - No CORS errors? ✅
+
+### 5.4. Test Complete Flow
+
+**User Registration:**
+
+1. Click "Register"
+2. Fill form và submit
+3. Check:
+   - [ ] User created
+   - [ ] Email sent
+   - [ ] Can login
+
+**Search & Book:**
+
+1. Login
+2. Search buses
+3. View details
+4. Select seats
+5. Book ticket (test mode)
+
+### 5.5. Common Issues & Fixes
+
+#### ❌ Issue 1: Render service sleeping
+
+```
+Error: Service unavailable (503)
+```
+
+**Nguyên nhân:** Free tier sleep sau 15 phút inactive
+
+**Fix:** 
+- Đợi 30-60s cho service wake up
+- Hoặc upgrade to paid plan
+- Hoặc dùng external monitor (UptimeRobot) để keep alive
+
+#### ❌ Issue 2: CORS Error
+
+```
+Access-Control-Allow-Origin error
+```
+
+**Fix:**
+1. Verify `CLIENT_URL` trên Render
+2. Đảm bảo đúng Vercel URL
+3. No trailing slash
+
+#### ❌ Issue 3: Build timeout trên Render
+
+```
+Build exceeded time limit
+```
+
+**Fix:**
+1. Check `package.json` dependencies
+2. Remove unused packages
+3. Consider upgrading plan
+
+✅ **Hoàn thành Bước 5!** App hoạt động tốt.
+
+---
+
+## BƯỚC 6: Setup CI/CD (GitHub Actions)
+
+### 6.1. Lấy Render API Key
+
+1. **Render Dashboard** → **Account Settings**
+2. Scroll xuống **"API Keys"**
+3. Click **"Create API Key"**
+4. Copy key
+
+```
+┌─────────────────────────────────────────┐
+│  Account Settings                       │
+│                                         │
+│  API Keys                               │
+│  ┌─────────────────────────────┐       │
+│  │ [+ Create API Key]          │       │
+│  └─────────────────────────────┘       │
+└─────────────────────────────────────────┘
+```
+
+### 6.2. Lấy Render Service ID
+
+1. **Vào service page**
+2. **Settings tab**
+3. Copy **Service ID** (format: `srv-xxxxxxxxxxxxx`)
+
+### 6.3. Lấy Vercel Tokens
+
+#### A. Vercel API Token
+
+1. **Vercel Dashboard** → **Settings** → **Tokens**
+2. **Create token:**
+
+```
+Token Name:     github-actions
+Scope:          Full Account
+Expiration:     No Expiration
+```
+
+3. Copy token
+
+#### B. Vercel Org & Project IDs
+
+```powershell
+# Install Vercel CLI
+npm install -g vercel
+
+# Login
+vercel login
+
+# Link project
+cd bus-booking-client
+vercel link
+
+# Get IDs
+cat .vercel/project.json
+```
+
+Output:
+```json
+{
+  "orgId": "team_xxxxx",
+  "projectId": "prj_xxxxx"
+}
+```
+
+### 6.4. Thêm GitHub Secrets
+
+1. **GitHub repo** → **Settings** → **Secrets and variables** → **Actions**
+2. **Click "New repository secret"**
+
+**Add these secrets:**
+
+| Name | Value | From |
+|------|-------|------|
+| `RENDER_API_KEY` | `rnd_xxx...` | Render Account Settings |
+| `RENDER_SERVICE_ID` | `srv_xxx...` | Render Service Settings |
+| `VERCEL_TOKEN` | `xxx...` | Vercel Settings |
+| `VERCEL_ORG_ID` | `team_xxx` | `.vercel/project.json` |
+| `VERCEL_PROJECT_ID` | `prj_xxx` | `.vercel/project.json` |
+| `VITE_API_BASE_URL` | `https://xxx.onrender.com` | Render URL |
+
+```
+┌─────────────────────────────────────────┐
+│  New secret                             │
+│                                         │
+│  Name:                                  │
+│  ┌─────────────────────────────┐       │
+│  │ RENDER_API_KEY              │       │
+│  └─────────────────────────────┘       │
+│                                         │
+│  Secret:                                │
+│  ┌─────────────────────────────┐       │
+│  │ paste key here              │       │
+│  └─────────────────────────────┘       │
+└─────────────────────────────────────────┘
+```
+
+### 6.5. Create Workflow File
+
+File `.github/workflows/deploy.yml` đã có sẵn, nhưng cần update cho Render:
+
+<function_calls>
+<invoke name="create_file">
+<parameter name="content">name: Deploy to Production (Vercel + Render)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  # ===================================
+  # TEST JOB
+  # ===================================
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: bus_booking_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: bus-booking-server/package-lock.json
+
+      - name: 📚 Install backend dependencies
+        working-directory: ./bus-booking-server
+        run: npm ci
+
+      - name: 🧪 Run backend tests
+        working-directory: ./bus-booking-server
+        env:
+          NODE_ENV: test
+          PG_HOST: localhost
+          PG_PORT: 5432
+          PG_USER: postgres
+          PG_PASSWORD: postgres
+          PG_DATABASE: bus_booking_test
+          JWT_SECRET: test-jwt-secret
+          SESSION_SECRET: test-session-secret
+        run: npm run test:passing
+
+  # ===================================
+  # DEPLOY BACKEND TO RENDER
+  # ===================================
+  deploy-backend:
+    name: Deploy Backend to Render
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🎨 Deploy to Render
+        uses: johnbeynon/render-deploy-action@v0.0.8
+        with:
+          service-id: ${{ secrets.RENDER_SERVICE_ID }}
+          api-key: ${{ secrets.RENDER_API_KEY }}
+
+  # ===================================
+  # DEPLOY FRONTEND TO VERCEL
+  # ===================================
+  deploy-frontend:
+    name: Deploy Frontend to Vercel
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./bus-booking-client
+          vercel-args: '--prod'
+
+  # ===================================
+  # NOTIFICATION JOB
+  # ===================================
+  notify:
+    name: Send Notification
+    runs-on: ubuntu-latest
+    needs: [deploy-backend, deploy-frontend]
+    if: always()
+    
+    steps:
+      - name: 📧 Send success notification
+        if: needs.deploy-backend.result == 'success' && needs.deploy-frontend.result == 'success'
+        run: |
+          echo "✅ Deployment successful!"
+          echo "Frontend: Deployed to Vercel"
+          echo "Backend: Deployed to Render"
+
+      - name: ❌ Send failure notification
+        if: needs.deploy-backend.result == 'failure' || needs.deploy-frontend.result == 'failure'
+        run: |
+          echo "❌ Deployment failed!"
+          exit 1

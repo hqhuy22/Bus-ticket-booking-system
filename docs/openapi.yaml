@@ -1,0 +1,844 @@
+openapi: 3.0.3
+info:
+  title: Bus Ticket Booking System API
+  description: |
+    Complete API documentation for the Bus Ticket Booking System.
+    
+    ## Features
+    - Customer authentication and management
+    - Bus schedule search and management
+    - Real-time seat locking and booking
+    - Payment integration with PayOS
+    - Review and rating system
+    - AI-powered chatbot
+    - Admin dashboard analytics
+    
+    ## Authentication
+    Most endpoints require JWT authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <your-jwt-token>
+    ```
+    
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@busticketbooking.com
+  license:
+    name: ISC
+    
+servers:
+  - url: http://localhost:4000
+    description: Development server
+  - url: https://api.busticketbooking.com
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication and OAuth
+  - name: Customer
+    description: Customer management
+  - name: Bus Schedules
+    description: Bus schedule operations
+  - name: Bookings
+    description: Booking management
+  - name: Seats
+    description: Seat locking and availability
+  - name: Payments
+    description: Payment processing
+  - name: Reviews
+    description: Review and rating system
+  - name: Analytics
+    description: Analytics and reporting (Admin)
+  - name: Chatbot
+    description: AI chatbot integration
+
+paths:
+  # Authentication
+  /api/auth/google:
+    get:
+      tags:
+        - Authentication
+      summary: Initiate Google OAuth
+      description: Redirects to Google OAuth consent page
+      responses:
+        '302':
+          description: Redirect to Google OAuth
+          
+  /api/auth/google/callback:
+    get:
+      tags:
+        - Authentication
+      summary: Google OAuth callback
+      description: Handles OAuth callback and creates/logs in user
+      responses:
+        '302':
+          description: Redirect to client with token
+          
+  # Customer APIs
+  /api/customer/register:
+    post:
+      tags:
+        - Customer
+      summary: Register new customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - username
+                - password
+                - fullName
+              properties:
+                email:
+                  type: string
+                  format: email
+                username:
+                  type: string
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                fullName:
+                  type: string
+                phoneNumber:
+                  type: string
+      responses:
+        '201':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '400':
+          description: Validation error or email exists
+          
+  /api/customer/login:
+    post:
+      tags:
+        - Customer
+      summary: Login customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  customer:
+                    $ref: '#/components/schemas/Customer'
+        '401':
+          description: Invalid credentials
+          
+  /api/customer/profile:
+    get:
+      tags:
+        - Customer
+      summary: Get customer profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profile retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+    put:
+      tags:
+        - Customer
+      summary: Update customer profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: string
+                phoneNumber:
+                  type: string
+                username:
+                  type: string
+      responses:
+        '200':
+          description: Profile updated
+          
+  # Bus Schedules
+  /api/bus-schedules:
+    get:
+      tags:
+        - Bus Schedules
+      summary: Search bus schedules
+      parameters:
+        - name: departure_city
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: arrival_city
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: departure_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: busType
+          in: query
+          schema:
+            type: string
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [price, duration, departure_time]
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: Schedules found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  schedules:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BusSchedule'
+                  total:
+                    type: integer
+                    
+  /api/bus-schedule/{id}:
+    get:
+      tags:
+        - Bus Schedules
+      summary: Get schedule by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Schedule details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusSchedule'
+                
+  # Bookings
+  /api/bookings:
+    post:
+      tags:
+        - Bookings
+      summary: Create booking (authenticated user)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingRequest'
+      responses:
+        '201':
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+                
+  /api/bookings/guest:
+    post:
+      tags:
+        - Bookings
+      summary: Create guest booking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CreateBookingRequest'
+                - type: object
+                  required:
+                    - guestEmail
+                    - guestPhone
+                    - guestName
+                  properties:
+                    guestEmail:
+                      type: string
+                      format: email
+                    guestPhone:
+                      type: string
+                    guestName:
+                      type: string
+      responses:
+        '201':
+          description: Guest booking created
+          
+  /api/bookings/my-bookings:
+    get:
+      tags:
+        - Bookings
+      summary: Get user's bookings
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, cancelled, completed, expired]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Bookings retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bookings:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Booking'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  totalPages:
+                    type: integer
+                    
+  /api/bookings/{id}/confirm:
+    post:
+      tags:
+        - Bookings
+      summary: Confirm booking
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Booking confirmed
+          
+  /api/bookings/{id}/cancel:
+    post:
+      tags:
+        - Bookings
+      summary: Cancel booking
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Booking cancelled
+          
+  # Seat Management
+  /api/seats/availability/{scheduleId}:
+    get:
+      tags:
+        - Seats
+      summary: Get seat availability
+      parameters:
+        - name: scheduleId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Seat availability
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scheduleId:
+                    type: integer
+                  totalSeats:
+                    type: integer
+                  availableSeats:
+                    type: integer
+                  lockedSeats:
+                    type: array
+                    items:
+                      type: integer
+                  bookedSeats:
+                    type: array
+                    items:
+                      type: integer
+                  seatMap:
+                    type: object
+                    additionalProperties:
+                      type: string
+                      enum: [available, locked, booked]
+                      
+  /api/seats/lock:
+    post:
+      tags:
+        - Seats
+      summary: Lock seats
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - scheduleId
+                - seatNumbers
+                - sessionId
+              properties:
+                scheduleId:
+                  type: integer
+                seatNumbers:
+                  type: array
+                  items:
+                    type: integer
+                sessionId:
+                  type: string
+      responses:
+        '200':
+          description: Seats locked
+        '409':
+          description: Seats unavailable
+          
+  # Payments
+  /api/payments/create:
+    post:
+      tags:
+        - Payments
+      summary: Create payment session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - bookingId
+                - amount
+              properties:
+                bookingId:
+                  type: integer
+                amount:
+                  type: number
+                description:
+                  type: string
+      responses:
+        '200':
+          description: Payment session created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  paymentId:
+                    type: string
+                  checkoutUrl:
+                    type: string
+                  qrCode:
+                    type: string
+                  amount:
+                    type: number
+                  expiresAt:
+                    type: string
+                    format: date-time
+                    
+  /api/payments/{paymentId}/status:
+    get:
+      tags:
+        - Payments
+      summary: Check payment status
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payment status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  paymentId:
+                    type: string
+                  status:
+                    type: string
+                    enum: [pending, completed, cancelled, failed]
+                  amount:
+                    type: number
+                    
+  # Reviews
+  /api/reviews:
+    post:
+      tags:
+        - Reviews
+      summary: Create review
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - bookingId
+                - rating
+              properties:
+                bookingId:
+                  type: integer
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                comment:
+                  type: string
+                serviceRating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                driverRating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                vehicleRating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+      responses:
+        '201':
+          description: Review created
+          
+  /api/reviews/schedule/{scheduleId}:
+    get:
+      tags:
+        - Reviews
+      summary: Get schedule reviews
+      parameters:
+        - name: scheduleId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Reviews retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reviews:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Review'
+                  averageRating:
+                    type: number
+                  totalReviews:
+                    type: integer
+                    
+  # Chatbot
+  /api/chatbot/message:
+    post:
+      tags:
+        - Chatbot
+      summary: Send message to chatbot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+                - sessionId
+              properties:
+                message:
+                  type: string
+                sessionId:
+                  type: string
+      responses:
+        '200':
+          description: Chatbot response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+                  suggestions:
+                    type: array
+                    items:
+                      type: string
+                  data:
+                    type: object
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      
+  schemas:
+    Customer:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        username:
+          type: string
+        fullName:
+          type: string
+        phoneNumber:
+          type: string
+        position:
+          type: string
+          enum: [customer, admin]
+        isVerified:
+          type: boolean
+        provider:
+          type: string
+          enum: [local, google, guest]
+        avatar:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+          
+    CustomerResponse:
+      type: object
+      properties:
+        msg:
+          type: string
+        customer:
+          $ref: '#/components/schemas/Customer'
+          
+    BusSchedule:
+      type: object
+      properties:
+        id:
+          type: integer
+        routeNo:
+          type: integer
+        departure_city:
+          type: string
+        departure_date:
+          type: string
+          format: date
+        departure_time:
+          type: string
+        arrival_city:
+          type: string
+        arrival_date:
+          type: string
+          format: date
+        arrival_time:
+          type: string
+        duration:
+          type: string
+        busType:
+          type: string
+        model:
+          type: string
+        price:
+          type: number
+        availableSeats:
+          type: integer
+        status:
+          type: string
+          enum: [Scheduled, In Progress, Completed, Cancelled]
+        depotName:
+          type: string
+        bus:
+          type: object
+        route:
+          type: object
+          
+    CreateBookingRequest:
+      type: object
+      required:
+        - busScheduleId
+        - seatNumbers
+        - passengers
+      properties:
+        busScheduleId:
+          type: integer
+        seatNumbers:
+          type: array
+          items:
+            type: integer
+        passengers:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              age:
+                type: integer
+              gender:
+                type: string
+              seatNumber:
+                type: integer
+        pickupPoint:
+          type: string
+        dropoffPoint:
+          type: string
+          
+    Booking:
+      type: object
+      properties:
+        id:
+          type: integer
+        bookingReference:
+          type: string
+        customerId:
+          type: integer
+        busScheduleId:
+          type: integer
+        seatNumbers:
+          type: array
+          items:
+            type: integer
+        status:
+          type: string
+          enum: [pending, confirmed, cancelled, completed, expired]
+        journeyDate:
+          type: string
+          format: date
+        payment_totalPay:
+          type: number
+        passengers:
+          type: array
+        expiresAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+          
+    BookingResponse:
+      type: object
+      properties:
+        msg:
+          type: string
+        booking:
+          $ref: '#/components/schemas/Booking'
+          
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+        rating:
+          type: integer
+        comment:
+          type: string
+        customer:
+          type: object
+          properties:
+            fullName:
+              type: string
+            avatar:
+              type: string
+        helpful:
+          type: integer
+        notHelpful:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+          
+    Error:
+      type: object
+      properties:
+        msg:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string

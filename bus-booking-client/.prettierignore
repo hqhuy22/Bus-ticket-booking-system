@@ -1,0 +1,29 @@
+# Dependencies
+node_modules
+
+# Build outputs
+dist
+build
+.next
+out
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+
+# Coverage
+coverage
+
+# Cache
+.cache
+.parcel-cache
+.vscode
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

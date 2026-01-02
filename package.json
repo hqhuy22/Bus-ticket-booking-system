@@ -1,0 +1,59 @@
+{
+  "name": "bus-ticket-booking-app",
+  "version": "1.0.0",
+  "description": "Full-stack bus ticket booking system with React, Node.js, and PostgreSQL",
+  "private": true,
+  "scripts": {
+    "prepare": "husky",
+    "install:all": "npm install && cd bus-booking-server && npm install && cd ../bus-booking-client && npm install",
+    "dev:server": "cd bus-booking-server && npm run dev",
+    "dev:client": "cd bus-booking-client && npm run dev",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "build:server": "cd bus-booking-server && npm run build",
+    "build:client": "cd bus-booking-client && npm run build",
+    "build": "npm run build:server && npm run build:client",
+    "test:server": "cd bus-booking-server && npm test",
+    "test:client": "cd bus-booking-client && npm test",
+    "test": "npm run test:server",
+    "lint:server": "cd bus-booking-server && npm run lint",
+    "lint:client": "cd bus-booking-client && npm run lint",
+    "lint": "npm run lint:server && npm run lint:client",
+    "lint:fix": "cd bus-booking-server && npm run lint:fix && cd ../bus-booking-client && npm run lint:fix",
+    "pre-deploy": "node scripts/pre-deploy-check.mjs",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^9.9.0",
+    "@jest/globals": "^30.2.0",
+    "@types/jest": "^30.0.0",
+    "@types/supertest": "^6.0.3",
+    "artillery": "^2.0.21",
+    "autocannon": "^8.0.0",
+    "chai": "^6.2.2",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "eslint-plugin-security": "^3.0.1",
+    "jest": "^30.2.0",
+    "supertest": "^7.1.4"
+  },
+  "keywords": [
+    "bus-booking",
+    "ticket-system",
+    "react",
+    "nodejs",
+    "postgresql",
+    "full-stack"
+  ],
+  "author": "Bus Booking Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/bus-ticket-booking-app.git"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

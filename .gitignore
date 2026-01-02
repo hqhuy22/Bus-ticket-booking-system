@@ -1,0 +1,66 @@
+# Ignore node_modules in bus-booking-client
+bus-booking-client/node_modules/
+bus-booking-server/node_modules/
+
+# Ignore .env files
+bus-booking-client/src/.env
+bus-booking-server/src/.env
+bus-booking-server/.env
+.env
+.env.local
+.env.*.local
+
+# Docker
+.env.production
+.env.staging
+
+# backend
+/backend
+
+*.txt
+*.drawio
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependencies
+node_modules/
+
+# Build directories
+dist/
+dist-ssr/
+*.local
+
+# Editor directories and files
+.vscode/
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS-specific files
+Thumbs.db
+ehthumbs.db
+
+# Docker volumes and data
+postgres_data/
+uploads_data/
+pgadmin_data/
+
+# Database backups (optional - uncomment to ignore)
+# database/backups/*.sql
+
+# Coverage reports
+coverage/
+.nyc_output/
+
+# Test artifacts
+*.test.js.snap
