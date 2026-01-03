@@ -22,7 +22,8 @@
     "test:integration": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand __tests__/integration",
     "test:coverage": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --coverage",
     "test:watch": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
-    "test:passing": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand __tests__/unit --testPathIgnorePatterns=pricingCalculator"
+    "test:passing": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand __tests__/unit --testPathIgnorePatterns=pricingCalculator",
+    "test:sendgrid": "node ./scripts/test-sendgrid.js"
   },
   "keywords": [
     "bus",

@@ -161,7 +161,7 @@ export const sendEmail = async (mailOptions) => {
 
   // Wrap the entire email send operation with a timeout
   const emailTimeout = parseInt(process.env.EMAIL_TIMEOUT || '45000', 10); // 45 seconds default
-  
+
   const sendPromise = (async () => {
     // SendGrid
     if (process.env.EMAIL_PROVIDER === 'sendgrid' && process.env.SENDGRID_API_KEY) {

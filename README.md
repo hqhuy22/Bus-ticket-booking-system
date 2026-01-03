@@ -91,7 +91,7 @@ git push origin main
 ### 🔧 Technical Features
 - **OAuth 2.0** - Google authentication
 - **JWT Auth** - Secure token-based authentication
-- **Email Service** - Automated notifications via Nodemailer
+- **Email Service** - Multiple providers (SendGrid, Gmail, AWS SES) - [Setup Guide](./SENDGRID_SETUP_GUIDE.md)
 - **File Upload** - Cloudinary integration for images
 - **Real-time Updates** - WebSocket for seat locking
 - **API Documentation** - Interactive OpenAPI/Swagger docs
@@ -201,7 +201,7 @@ database/
 - **Database:** PostgreSQL 15.x
 - **ORM:** Sequelize
 - **Authentication:** Passport.js (JWT + OAuth2)
-- **Email:** Nodemailer
+- **Email:** SendGrid, Gmail, AWS SES ([Config Guide](./docs/EMAIL_CONFIGURATION.md))
 - **File Upload:** Cloudinary
 - **Payment:** Stripe, VNPay, PayPal
 - **API Docs:** Swagger/OpenAPI
@@ -552,7 +552,9 @@ Required environment variables for production:
 - `JWT_SECRET` - JWT signing secret (min 32 chars)
 - `SESSION_SECRET` - Session secret (min 32 chars)
 - `CLIENT_URL` - Frontend URL
-- `EMAIL_*` - Email service credentials
+- `EMAIL_PROVIDER` - Email service provider (sendgrid/gmail/ses) - [Setup Guide](./SENDGRID_SETUP_GUIDE.md)
+- `SENDGRID_API_KEY` - SendGrid API key (if using SendGrid)
+- `SENDGRID_FROM_EMAIL` - Verified sender email
 - `GOOGLE_*` - Google OAuth credentials (optional)
 - `GEMINI_API_KEY` - AI chatbot key (optional)
 

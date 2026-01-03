@@ -102,6 +102,47 @@ SELECT COUNT(*) FROM "BusSchedules";
 SELECT COUNT(*) FROM "BusBookings";
 ```
 
+## 📧 Test Email Service
+
+### Test SendGrid Configuration
+
+```bash
+# Test SendGrid setup and send a test email
+npm run test:sendgrid your-email@example.com
+
+# Or run directly
+node scripts/test-sendgrid.js your-email@example.com
+```
+
+**What it does:**
+- ✅ Validates environment variables (EMAIL_PROVIDER, SENDGRID_API_KEY, SENDGRID_FROM_EMAIL)
+- ✅ Tests SendGrid API connection
+- ✅ Sends a beautiful HTML test email
+- ✅ Provides helpful error messages
+
+**Expected output:**
+```
+╔═══════════════════════════════════════════════════════╗
+║        SendGrid Email Integration Test Script        ║
+╚═══════════════════════════════════════════════════════╝
+
+🔍 Checking Configuration...
+✓ EMAIL_PROVIDER: sendgrid
+✓ SENDGRID_API_KEY: SG.xxxxxxxx...xxxxxxxxxx
+✓ SENDGRID_FROM_EMAIL: your-verified@email.com
+
+🔌 Testing SendGrid Connection...
+✓ SendGrid API key configured
+
+📧 Sending Test Email...
+✓ Email sent successfully!
+
+✅ All Tests Passed!
+```
+
+**Setup SendGrid:**
+See [SENDGRID_SETUP_GUIDE.md](../../SENDGRID_SETUP_GUIDE.md) for detailed instructions.
+
 ## Lưu Ý
 
 - Script sẽ **không xóa** dữ liệu cũ
@@ -124,6 +165,15 @@ SELECT COUNT(*) FROM "BusBookings";
 ```bash
 # Bình thường - script sẽ skip dữ liệu đã tồn tại
 # Không cần lo lắng
+```
+
+### Lỗi email không gửi được
+```bash
+# Check provider configuration
+npm run test:sendgrid test@example.com
+
+# See troubleshooting guide
+# See: SENDGRID_QUICK_REFERENCE.md
 ```
 
 ---
