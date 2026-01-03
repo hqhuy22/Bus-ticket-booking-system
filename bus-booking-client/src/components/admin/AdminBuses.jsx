@@ -9,6 +9,7 @@ export default function AdminBuses() {
   const [editingBus, setEditingBus] = useState(null);
   const [showSeatEditor, setShowSeatEditor] = useState(false);
   const [selectedBusForEditor, setSelectedBusForEditor] = useState(null);
+  const [selectedPhotos, setSelectedPhotos] = useState([]);
   const [formData, setFormData] = useState({
     busNumber: '',
     plateNumber: '',
@@ -36,10 +37,14 @@ export default function AdminBuses() {
     setLoading(true);
     try {
       const response = await axios.get('/api/buses');
-      setBuses(response.data);
+      console.log('Fetched buses:', response.data); // Debug log
+      // Force a new array to ensure React re-renders
+      setBuses([...response.data]);
+      return response.data; // Return the data for chaining
     } catch (error) {
       console.error('Error fetching buses:', error);
       alert('Failed to fetch buses');
+      return null;
     } finally {
       setLoading(false);
     }
@@ -47,6 +52,9 @@ export default function AdminBuses() {
 
   const handleSubmit = async e => {
     e.preventDefault();
+    
+    console.log('Submitting bus:', { editingBus, formData, selectedPhotos }); // Debug log
+    
     try {
       // Ensure totalSeats is a number when sending to the server
       const payload = {
@@ -55,17 +63,71 @@ export default function AdminBuses() {
         amenities: formData.amenities || [],
       };
 
+      let busId = editingBus?.id;
+      let isNewBus = !editingBus;
+
       if (editingBus) {
-        await axios.put(`/api/bus/${editingBus.id}`, payload);
-        alert('Bus updated successfully');
+        const response = await axios.put(`/api/bus/${editingBus.id}`, payload);
+        console.log('Update response:', response.data); // Debug log
+        busId = editingBus.id; // Ensure we have the ID
       } else {
-        await axios.post('/api/bus', payload);
-        alert('Bus created successfully');
+        const response = await axios.post('/api/bus', payload);
+        console.log('Create response:', response.data); // Debug log
+        busId = response.data.bus.id;
       }
+
+      // Upload photos if any were selected
+      let photosUploaded = false;
+      if (selectedPhotos.length > 0 && busId) {
+        const photoFormData = new FormData();
+        selectedPhotos.forEach(file => {
+          photoFormData.append('photos', file);
+        });
+
+        try {
+          const photoResponse = await axios.post(
+            `/api/bus/${busId}/photos`,
+            photoFormData,
+            {
+              headers: { 'Content-Type': 'multipart/form-data' },
+            }
+          );
+          console.log('Photo upload response:', photoResponse.data); // Debug log
+          photosUploaded = true;
+        } catch (photoError) {
+          console.error('Error uploading photos:', photoError);
+          alert(
+            'Bus saved but photo upload failed: ' +
+              (photoError.response?.data?.error || photoError.message)
+          );
+        }
+      }
+
+      // Reset form and state BEFORE fetching
       setShowForm(false);
       setEditingBus(null);
+      setSelectedPhotos([]);
       resetForm();
-      fetchBuses();
+      
+      // Fetch buses to get updated list and wait for it
+      await fetchBuses();
+      
+      // Show success message after everything is done
+      if (isNewBus) {
+        if (photosUploaded) {
+          alert('Bus created and photos uploaded successfully');
+        } else {
+          alert('Bus created successfully');
+        }
+      } else {
+        if (photosUploaded) {
+          alert('Bus updated and photos uploaded successfully');
+        } else {
+          alert('Bus updated successfully');
+        }
+      }
+      
+      console.log('Bus operation completed successfully'); // Debug log
     } catch (error) {
       console.error('Error saving bus:', error);
       alert(error.response?.data?.error || 'Failed to save bus');
@@ -73,16 +135,26 @@ export default function AdminBuses() {
   };
 
   const handleEdit = bus => {
-    setEditingBus(bus);
+    console.log('Editing bus:', bus); // Debug log
+    
+    // Create a fresh copy to avoid reference issues
+    const busCopy = {
+      ...bus,
+      photos: bus.photos ? [...bus.photos] : [],
+      amenities: bus.amenities ? [...bus.amenities] : [],
+    };
+    
+    setEditingBus(busCopy);
     setFormData({
-      busNumber: bus.busNumber,
-      plateNumber: bus.plateNumber || '',
-      busType: bus.busType,
-      model: bus.model,
-      totalSeats: bus.totalSeats,
-      depotName: bus.depotName,
-      amenities: bus.amenities || [],
+      busNumber: busCopy.busNumber,
+      plateNumber: busCopy.plateNumber || '',
+      busType: busCopy.busType,
+      model: busCopy.model,
+      totalSeats: busCopy.totalSeats,
+      depotName: busCopy.depotName,
+      amenities: busCopy.amenities,
     });
+    setSelectedPhotos([]); // Clear any previously selected photos
     setShowForm(true);
   };
 
@@ -123,6 +195,7 @@ export default function AdminBuses() {
       depotName: '',
       amenities: [],
     });
+    setSelectedPhotos([]);
   };
 
   return (
@@ -257,39 +330,79 @@ export default function AdminBuses() {
               <label className="block mb-2 font-medium">
                 Bus Photos (Max 5)
               </label>
+              {/* Show existing photos when editing */}
               {editingBus &&
                 editingBus.photos &&
                 editingBus.photos.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-sm text-gray-600 mb-2">
+                      Existing Photos:
+                    </p>
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {editingBus.photos.map((url, idx) => (
+                        <div key={idx} className="relative">
+                          <img
+                            src={`http://localhost:4000${url}`}
+                            alt={`Bus ${idx + 1}`}
+                            className="w-24 h-24 object-cover rounded border"
+                          />
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (!window.confirm('Delete this photo?')) return;
+                              try {
+                                await axios.delete(
+                                  `/api/bus/${editingBus.id}/photos/${idx}`
+                                );
+                                
+                                // Update editingBus immediately for UI
+                                const updatedPhotos = editingBus.photos.filter(
+                                  (_, i) => i !== idx
+                                );
+                                const updatedBus = {
+                                  ...editingBus,
+                                  photos: updatedPhotos,
+                                };
+                                setEditingBus(updatedBus);
+                                
+                                // Fetch updated buses list in background
+                                await fetchBuses();
+                                
+                                alert('Photo deleted successfully');
+                              } catch (err) {
+                                console.error(err);
+                                alert('Failed to delete photo');
+                              }
+                            }}
+                            className="absolute -top-2 -right-2 bg-error-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-error-600"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              {/* Show preview of newly selected photos */}
+              {selectedPhotos.length > 0 && (
+                <div className="mb-3">
+                  <p className="text-sm text-gray-600 mb-2">
+                    New Photos to Upload:
+                  </p>
                   <div className="flex flex-wrap gap-2 mb-3">
-                    {editingBus.photos.map((url, idx) => (
+                    {selectedPhotos.map((file, idx) => (
                       <div key={idx} className="relative">
                         <img
-                          src={`http://localhost:4000${url}`}
-                          alt={`Bus ${idx + 1}`}
+                          src={URL.createObjectURL(file)}
+                          alt={`New ${idx + 1}`}
                           className="w-24 h-24 object-cover rounded border"
                         />
                         <button
                           type="button"
-                          onClick={async () => {
-                            if (!window.confirm('Delete this photo?')) return;
-                            try {
-                              await axios.delete(
-                                `/api/bus/${editingBus.id}/photos/${idx}`
-                              );
-                              alert('Photo deleted');
-                              fetchBuses();
-                              // Update editingBus
-                              const updatedBus = {
-                                ...editingBus,
-                                photos: editingBus.photos.filter(
-                                  (_, i) => i !== idx
-                                ),
-                              };
-                              setEditingBus(updatedBus);
-                            } catch (err) {
-                              console.error(err);
-                              alert('Failed to delete photo');
-                            }
+                          onClick={() => {
+                            setSelectedPhotos(prev =>
+                              prev.filter((_, i) => i !== idx)
+                            );
                           }}
                           className="absolute -top-2 -right-2 bg-error-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-error-600"
                         >
@@ -298,56 +411,36 @@ export default function AdminBuses() {
                       </div>
                     ))}
                   </div>
-                )}
+                </div>
+              )}
               <input
                 type="file"
                 multiple
                 accept="image/*"
-                onChange={async e => {
-                  if (!editingBus) {
-                    alert('Please save the bus first before uploading photos');
+                onChange={e => {
+                  const files = Array.from(e.target.files || []);
+                  if (files.length === 0) return;
+
+                  // Limit to 5 photos total
+                  const currentCount = editingBus?.photos?.length || 0;
+                  const newPhotosCount = selectedPhotos.length;
+                  const availableSlots = 5 - currentCount - newPhotosCount;
+
+                  if (availableSlots <= 0) {
+                    alert('Maximum 5 photos allowed per bus');
                     e.target.value = '';
                     return;
                   }
-                  const files = e.target.files;
-                  if (!files || files.length === 0) return;
 
-                  const formData = new FormData();
-                  for (let i = 0; i < files.length && i < 5; i++) {
-                    formData.append('photos', files[i]);
-                  }
-
-                  try {
-                    const response = await axios.post(
-                      `/api/bus/${editingBus.id}/photos`,
-                      formData,
-                      {
-                        headers: { 'Content-Type': 'multipart/form-data' },
-                      }
-                    );
-                    alert('Photos uploaded successfully');
-                    fetchBuses();
-                    // Update editingBus
-                    const updatedBus = {
-                      ...editingBus,
-                      photos: response.data.photos,
-                    };
-                    setEditingBus(updatedBus);
-                    e.target.value = '';
-                  } catch (err) {
-                    console.error(err);
-                    alert(
-                      err.response?.data?.error || 'Failed to upload photos'
-                    );
-                    e.target.value = '';
-                  }
+                  const filesToAdd = files.slice(0, availableSlots);
+                  setSelectedPhotos(prev => [...prev, ...filesToAdd]);
+                  e.target.value = '';
                 }}
                 className="border p-2 rounded w-full"
               />
               <p className="text-xs text-gray-500 mt-1">
-                {editingBus
-                  ? 'Upload images (jpeg, jpg, png, webp). Max 5MB each.'
-                  : 'Save bus first before uploading photos'}
+                Upload images (jpeg, jpg, png, webp). Max 5MB each, max 5 photos
+                total.
               </p>
             </div>
           </div>
