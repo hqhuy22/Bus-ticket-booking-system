@@ -56,7 +56,7 @@ export default function PaymentForm() {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/payments/create`,
+        `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/api/payments/create`,
         {
           bookingId: booking.id,
           isGuest: isGuest || false,
@@ -90,7 +90,7 @@ export default function PaymentForm() {
     setLoading(true);
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/payments/${sessionId}`
+        `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/api/payments/${sessionId}`
       );
       setPaymentSession(response.data.session);
     } catch (error) {
@@ -111,7 +111,7 @@ export default function PaymentForm() {
     if (paymentId) {
       try {
         await axios.post(
-          `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/payments/${paymentId}/cancel`
+          `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/api/payments/${paymentId}/cancel`
         );
       } catch (error) {
         console.error('Error cancelling payment:', error);
@@ -207,7 +207,7 @@ export default function PaymentForm() {
       };
 
       const response = await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/payments/process`,
+        `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/api/payments/process`,
         paymentData
       );
 
@@ -251,7 +251,7 @@ export default function PaymentForm() {
                 // For guest bookings, we need email/phone from location state
                 const guestInfo = location.state?.guestInfo || {};
                 await axios.post(
-                    `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/bookings/guest/${booking?.bookingReference || bookingData?.bookingReference}/confirm`,
+                    `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/api/bookings/guest/${booking?.bookingReference || bookingData?.bookingReference}/confirm`,
                     { 
                         paymentReference,
                         email: guestInfo.email,
@@ -261,7 +261,7 @@ export default function PaymentForm() {
             } else {
                 // For authenticated users
                 await axios.post(
-                    `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/bookings/${booking?.id || bookingData?.id}/confirm`,
+                    `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/api/bookings/${booking?.id || bookingData?.id}/confirm`,
                     { paymentReference },
                     {
                         headers: { Authorization: `Bearer ${token}` }

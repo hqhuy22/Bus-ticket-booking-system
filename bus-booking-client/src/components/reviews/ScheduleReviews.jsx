@@ -16,7 +16,7 @@ import {
 import PropTypes from 'prop-types';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 
 export default function ScheduleReviews({ scheduleId }) {
   const [reviews, setReviews] = useState([]);
