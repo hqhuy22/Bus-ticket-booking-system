@@ -172,6 +172,21 @@ export const sendEmail = async (mailOptions) => {
         subject: mailOptions.subject,
         html: mailOptions.html,
       };
+
+      // Add attachments if provided
+      if (mailOptions.attachments && mailOptions.attachments.length > 0) {
+        msg.attachments = mailOptions.attachments.map((attachment) => {
+          // Convert nodemailer format to SendGrid format
+          return {
+            content: attachment.content.toString('base64'), // SendGrid requires base64 string
+            filename: attachment.filename,
+            type: attachment.contentType || 'application/octet-stream',
+            disposition: 'attachment',
+          };
+        });
+        console.log(`[Email] SendGrid: Added ${msg.attachments.length} attachment(s)`);
+      }
+
       await sgMail.send(msg);
       console.log(`[Email] SendGrid email sent successfully to ${mailOptions.to}`);
       return;

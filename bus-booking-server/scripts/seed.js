@@ -420,6 +420,7 @@ const SAMPLE_USERS = [
 
 // Sample Buses
 const SAMPLE_BUSES = [
+  // === Hanoi Central Depot (8 buses) ===
   {
     busNumber: 'VN-001',
     plateNumber: '29A-12345',
@@ -463,32 +464,11 @@ const SAMPLE_BUSES = [
     },
     amenities: ['WiFi', 'AC', 'USB Charging', 'Water'],
     status: 'active',
-    depotName: 'Ho Chi Minh Central Depot',
+    depotName: 'Hanoi Central Depot',
     photos: ['/buses/vn002-1.jpg'],
   },
   {
     busNumber: 'VN-003',
-    plateNumber: '51A-11111',
-    busType: 'Normal Seater',
-    model: 'Hyundai Universe',
-    totalSeats: 50,
-    seatMapConfig: {
-      layout: 'seater',
-      rows: 13,
-      columns: 4,
-      aisleAfter: 2,
-      excludedSeats: [13, 14],
-      seatTypes: {
-        standard: Array.from({ length: 48 }, (_, i) => i + 1).filter((s) => ![13, 14].includes(s)),
-      },
-    },
-    amenities: ['AC', 'Water'],
-    status: 'active',
-    depotName: 'Da Nang Depot',
-    photos: [],
-  },
-  {
-    busNumber: 'VN-004',
     plateNumber: '29B-22222',
     busType: 'VIP Sleeper',
     model: 'Scania K410IB',
@@ -515,16 +495,401 @@ const SAMPLE_BUSES = [
     ],
     status: 'active',
     depotName: 'Hanoi Central Depot',
-    photos: ['/buses/vn004-1.jpg', '/buses/vn004-2.jpg', '/buses/vn004-3.jpg'],
+    photos: ['/buses/vn003-1.jpg', '/buses/vn003-2.jpg', '/buses/vn003-3.jpg'],
+  },
+  {
+    busNumber: 'VN-004',
+    plateNumber: '29C-44444',
+    busType: 'AC Sleeper',
+    model: 'Mercedes-Benz OC500RF',
+    totalSeats: 40,
+    seatMapConfig: {
+      layout: 'sleeper',
+      rows: 10,
+      columns: 4,
+      aisleAfter: 2,
+      excludedSeats: [],
+      seatTypes: {
+        vip: [1, 2, 3, 4],
+        standard: Array.from({ length: 36 }, (_, i) => i + 5),
+      },
+    },
+    amenities: ['WiFi', 'AC', 'USB Charging', 'Entertainment', 'Blanket', 'Water'],
+    status: 'active',
+    depotName: 'Hanoi Central Depot',
+    photos: ['/buses/vn004-1.jpg'],
   },
   {
     busNumber: 'VN-005',
-    plateNumber: '92A-33333',
-    busType: 'AC Sleeper',
+    plateNumber: '29D-55555',
+    busType: 'AC Semi-Sleeper',
     model: 'Mercedes-Benz Travego',
     totalSeats: 42,
-    amenities: ['WiFi', 'AC', 'Entertainment'],
-    status: 'maintenance',
+    seatMapConfig: {
+      layout: 'semi-sleeper',
+      rows: 11,
+      columns: 4,
+      aisleAfter: 2,
+      excludedSeats: [41, 42],
+      seatTypes: {
+        standard: Array.from({ length: 42 }, (_, i) => i + 1),
+      },
+    },
+    amenities: ['WiFi', 'AC', 'Entertainment', 'Water'],
+    status: 'active',
+    depotName: 'Hanoi Central Depot',
+    photos: [],
+  },
+  {
+    busNumber: 'VN-006',
+    plateNumber: '29E-66666',
+    busType: 'Normal Seater',
+    model: 'Hyundai Universe',
+    totalSeats: 50,
+    seatMapConfig: {
+      layout: 'seater',
+      rows: 13,
+      columns: 4,
+      aisleAfter: 2,
+      excludedSeats: [13, 14],
+      seatTypes: {
+        standard: Array.from({ length: 48 }, (_, i) => i + 1).filter((s) => ![13, 14].includes(s)),
+      },
+    },
+    amenities: ['AC', 'Water'],
+    status: 'active',
+    depotName: 'Hanoi Central Depot',
+    photos: [],
+  },
+  {
+    busNumber: 'VN-007',
+    plateNumber: '29F-77777',
+    busType: 'VIP Sleeper',
+    model: 'Scania K410IB',
+    totalSeats: 32,
+    seatMapConfig: {
+      layout: 'sleeper',
+      rows: 8,
+      columns: 4,
+      aisleAfter: 2,
+      excludedSeats: [],
+      seatTypes: {
+        vip: Array.from({ length: 32 }, (_, i) => i + 1),
+      },
+    },
+    amenities: [
+      'WiFi',
+      'AC',
+      'USB Charging',
+      'Entertainment',
+      'Massage Seats',
+      'Blanket',
+      'Meals',
+      'Water',
+    ],
+    status: 'active',
+    depotName: 'Hanoi Central Depot',
+    photos: ['/buses/vn007-1.jpg'],
+  },
+  {
+    busNumber: 'VN-008',
+    plateNumber: '29G-88888',
+    busType: 'AC Sleeper',
+    model: 'Mercedes-Benz OC500RF',
+    totalSeats: 38,
+    seatMapConfig: {
+      layout: 'sleeper',
+      rows: 10,
+      columns: 4,
+      aisleAfter: 2,
+      excludedSeats: [37, 38],
+      seatTypes: {
+        vip: [1, 2, 3, 4],
+        standard: Array.from({ length: 34 }, (_, i) => i + 5),
+      },
+    },
+    amenities: ['WiFi', 'AC', 'USB Charging', 'Blanket', 'Water'],
+    status: 'active',
+    depotName: 'Hanoi Central Depot',
+    photos: [],
+  },
+
+  // === Ho Chi Minh Central Depot (7 buses) ===
+  {
+    busNumber: 'VN-009',
+    plateNumber: '30B-99999',
+    busType: 'AC Semi-Sleeper',
+    model: 'Volvo 9700',
+    totalSeats: 45,
+    seatMapConfig: {
+      layout: 'semi-sleeper',
+      rows: 12,
+      columns: 4,
+      aisleAfter: 2,
+      excludedSeats: [],
+      seatTypes: {
+        standard: Array.from({ length: 45 }, (_, i) => i + 1),
+      },
+    },
+    amenities: ['WiFi', 'AC', 'USB Charging', 'Water'],
+    status: 'active',
+    depotName: 'Ho Chi Minh Central Depot',
+    photos: ['/buses/vn009-1.jpg'],
+  },
+  {
+    busNumber: 'VN-010',
+    plateNumber: '30C-10101',
+    busType: 'VIP Sleeper',
+    model: 'Scania K410IB',
+    totalSeats: 28,
+    seatMapConfig: {
+      layout: 'sleeper',
+      rows: 7,
+      columns: 4,
+      aisleAfter: 2,
+      excludedSeats: [],
+      seatTypes: {
+        vip: Array.from({ length: 28 }, (_, i) => i + 1),
+      },
+    },
+    amenities: [
+      'WiFi',
+      'AC',
+      'USB Charging',
+      'Entertainment',
+      'Massage Seats',
+      'Blanket',
+      'Meals',
+      'Water',
+      'Personal Screen',
+    ],
+    status: 'active',
+    depotName: 'Ho Chi Minh Central Depot',
+    photos: ['/buses/vn010-1.jpg', '/buses/vn010-2.jpg'],
+  },
+  {
+    busNumber: 'VN-011',
+    plateNumber: '30D-11011',
+    busType: 'AC Sleeper',
+    model: 'Mercedes-Benz OC500RF',
+    totalSeats: 40,
+    seatMapConfig: {
+      layout: 'sleeper',
+      rows: 10,
+      columns: 4,
+      aisleAfter: 2,
+      excludedSeats: [],
+      seatTypes: {
+        vip: [1, 2, 3, 4],
+        standard: Array.from({ length: 36 }, (_, i) => i + 5),
+      },
+    },
+    amenities: ['WiFi', 'AC', 'USB Charging', 'Entertainment', 'Blanket', 'Water'],
+    status: 'active',
+    depotName: 'Ho Chi Minh Central Depot',
+    photos: [],
+  },
+  {
+    busNumber: 'VN-012',
+    plateNumber: '30E-12012',
+    busType: 'Normal Seater',
+    model: 'Hyundai Universe',
+    totalSeats: 50,
+    seatMapConfig: {
+      layout: 'seater',
+      rows: 13,
+      columns: 4,
+      aisleAfter: 2,
+      excludedSeats: [13, 14],
+      seatTypes: {
+        standard: Array.from({ length: 48 }, (_, i) => i + 1).filter((s) => ![13, 14].includes(s)),
+      },
+    },
+    amenities: ['AC', 'Water'],
+    status: 'active',
+    depotName: 'Ho Chi Minh Central Depot',
+    photos: [],
+  },
+  {
+    busNumber: 'VN-013',
+    plateNumber: '30F-13013',
+    busType: 'AC Semi-Sleeper',
+    model: 'Volvo 9700',
+    totalSeats: 42,
+    seatMapConfig: {
+      layout: 'semi-sleeper',
+      rows: 11,
+      columns: 4,
+      aisleAfter: 2,
+      excludedSeats: [41, 42],
+      seatTypes: {
+        standard: Array.from({ length: 42 }, (_, i) => i + 1),
+      },
+    },
+    amenities: ['WiFi', 'AC', 'USB Charging', 'Entertainment', 'Water'],
+    status: 'active',
+    depotName: 'Ho Chi Minh Central Depot',
+    photos: [],
+  },
+  {
+    busNumber: 'VN-014',
+    plateNumber: '30G-14014',
+    busType: 'AC Sleeper',
+    model: 'Mercedes-Benz Travego',
+    totalSeats: 36,
+    seatMapConfig: {
+      layout: 'sleeper',
+      rows: 9,
+      columns: 4,
+      aisleAfter: 2,
+      excludedSeats: [],
+      seatTypes: {
+        vip: [1, 2, 3, 4, 5, 6],
+        standard: Array.from({ length: 30 }, (_, i) => i + 7),
+      },
+    },
+    amenities: ['WiFi', 'AC', 'USB Charging', 'Entertainment', 'Blanket', 'Water'],
+    status: 'active',
+    depotName: 'Ho Chi Minh Central Depot',
+    photos: ['/buses/vn014-1.jpg'],
+  },
+  {
+    busNumber: 'VN-015',
+    plateNumber: '30H-15015',
+    busType: 'VIP Sleeper',
+    model: 'Scania K410IB',
+    totalSeats: 30,
+    seatMapConfig: {
+      layout: 'sleeper',
+      rows: 8,
+      columns: 4,
+      aisleAfter: 2,
+      excludedSeats: [29, 30],
+      seatTypes: {
+        vip: Array.from({ length: 30 }, (_, i) => i + 1),
+      },
+    },
+    amenities: [
+      'WiFi',
+      'AC',
+      'USB Charging',
+      'Entertainment',
+      'Massage Seats',
+      'Blanket',
+      'Meals',
+      'Water',
+    ],
+    status: 'active',
+    depotName: 'Ho Chi Minh Central Depot',
+    photos: [],
+  },
+
+  // === Da Nang Depot (3 buses) ===
+  {
+    busNumber: 'VN-016',
+    plateNumber: '51B-16016',
+    busType: 'AC Semi-Sleeper',
+    model: 'Volvo 9700',
+    totalSeats: 45,
+    seatMapConfig: {
+      layout: 'semi-sleeper',
+      rows: 12,
+      columns: 4,
+      aisleAfter: 2,
+      excludedSeats: [],
+      seatTypes: {
+        standard: Array.from({ length: 45 }, (_, i) => i + 1),
+      },
+    },
+    amenities: ['WiFi', 'AC', 'USB Charging', 'Water'],
+    status: 'active',
+    depotName: 'Da Nang Depot',
+    photos: [],
+  },
+  {
+    busNumber: 'VN-017',
+    plateNumber: '51C-17017',
+    busType: 'Normal Seater',
+    model: 'Hyundai Universe',
+    totalSeats: 50,
+    seatMapConfig: {
+      layout: 'seater',
+      rows: 13,
+      columns: 4,
+      aisleAfter: 2,
+      excludedSeats: [13, 14],
+      seatTypes: {
+        standard: Array.from({ length: 48 }, (_, i) => i + 1).filter((s) => ![13, 14].includes(s)),
+      },
+    },
+    amenities: ['AC', 'Water'],
+    status: 'active',
+    depotName: 'Da Nang Depot',
+    photos: [],
+  },
+  {
+    busNumber: 'VN-018',
+    plateNumber: '51D-18018',
+    busType: 'AC Sleeper',
+    model: 'Mercedes-Benz OC500RF',
+    totalSeats: 40,
+    seatMapConfig: {
+      layout: 'sleeper',
+      rows: 10,
+      columns: 4,
+      aisleAfter: 2,
+      excludedSeats: [],
+      seatTypes: {
+        vip: [1, 2, 3, 4],
+        standard: Array.from({ length: 36 }, (_, i) => i + 5),
+      },
+    },
+    amenities: ['WiFi', 'AC', 'USB Charging', 'Entertainment', 'Blanket', 'Water'],
+    status: 'active',
+    depotName: 'Da Nang Depot',
+    photos: [],
+  },
+
+  // === Can Tho Depot (2 buses) ===
+  {
+    busNumber: 'VN-019',
+    plateNumber: '92B-19019',
+    busType: 'AC Semi-Sleeper',
+    model: 'Mercedes-Benz Travego',
+    totalSeats: 42,
+    seatMapConfig: {
+      layout: 'semi-sleeper',
+      rows: 11,
+      columns: 4,
+      aisleAfter: 2,
+      excludedSeats: [41, 42],
+      seatTypes: {
+        standard: Array.from({ length: 42 }, (_, i) => i + 1),
+      },
+    },
+    amenities: ['WiFi', 'AC', 'Entertainment', 'Water'],
+    status: 'active',
+    depotName: 'Can Tho Depot',
+    photos: [],
+  },
+  {
+    busNumber: 'VN-020',
+    plateNumber: '92C-20020',
+    busType: 'Normal Seater',
+    model: 'Hyundai Universe',
+    totalSeats: 50,
+    seatMapConfig: {
+      layout: 'seater',
+      rows: 13,
+      columns: 4,
+      aisleAfter: 2,
+      excludedSeats: [13, 14],
+      seatTypes: {
+        standard: Array.from({ length: 48 }, (_, i) => i + 1).filter((s) => ![13, 14].includes(s)),
+      },
+    },
+    amenities: ['AC', 'Water'],
+    status: 'active',
     depotName: 'Can Tho Depot',
     photos: [],
   },
@@ -1119,282 +1484,386 @@ async function seedBusSchedules(buses, routes) {
   console.log('📅 Seeding bus schedules...');
   const schedules = [];
 
-  // Create schedules for next 14 days
-  for (let day = 0; day < 14; day++) {
-    const departureDate = formatDate(getFutureDate(day));
+  // Create exactly 15 schedules, each with a unique bus (buses 0-14)
+  // This ensures 1:1 mapping between buses and schedules
 
-    // Route 101: Hanoi - HCM (morning departure)
-    if (buses[0] && routes[0]) {
-      const schedule1 = await BusSchedule.create({
-        routeNo: routes[0].routeNo,
-        busId: buses[0].id,
-        routeId: routes[0].id,
-        departure_city: routes[0].origin,
-        departure_date: departureDate,
-        departure_time: '06:00',
-        arrival_city: routes[0].destination,
-        arrival_date: formatDate(getFutureDate(day + 1)),
-        arrival_time: '06:00',
-        duration: routes[0].estimatedDuration,
-        busType: buses[0].busType,
-        model: buses[0].model,
-        busScheduleID: `SCH-${routes[0].routeNo}-${departureDate}-0600`,
-        depotName: buses[0].depotName,
-        bookingClosingDate: departureDate,
-        bookingClosingTime: '05:45',
-        price: 850000,
-        availableSeats: buses[0].totalSeats,
-        status: day === 0 ? 'In Progress' : 'Scheduled',
-        departedAt: day === 0 ? new Date() : null,
-      });
-      schedules.push(schedule1);
-    }
+  // Schedule 1: VN-001 on Route 101 (Hanoi - HCM) - Morning Departure
+  const schedule1 = await BusSchedule.create({
+    routeNo: routes[0].routeNo,
+    busId: buses[0].id,
+    routeId: routes[0].id,
+    departure_city: routes[0].origin,
+    departure_date: formatDate(getFutureDate(0)),
+    departure_time: '06:00',
+    arrival_city: routes[0].destination,
+    arrival_date: formatDate(getFutureDate(1)),
+    arrival_time: '06:00',
+    duration: routes[0].estimatedDuration,
+    busType: buses[0].busType,
+    model: buses[0].model,
+    busScheduleID: `SCH-${routes[0].routeNo}-${formatDate(getFutureDate(0))}-0600`,
+    depotName: buses[0].depotName,
+    bookingClosingDate: formatDate(getFutureDate(0)),
+    bookingClosingTime: '05:45',
+    price: 850000,
+    availableSeats: buses[0].totalSeats,
+    status: 'In Progress',
+    departedAt: new Date(),
+  });
+  schedules.push(schedule1);
+  console.log(`  ✅ Created schedule: ${schedule1.busScheduleID} (Bus: ${buses[0].busNumber})`);
 
-    // Route 102: Hanoi - Da Nang (evening departure, every 2 days)
-    if (day % 2 === 0 && buses[1] && routes[1]) {
-      const schedule2 = await BusSchedule.create({
-        routeNo: routes[1].routeNo,
-        busId: buses[1].id,
-        routeId: routes[1].id,
-        departure_city: routes[1].origin,
-        departure_date: departureDate,
-        departure_time: '17:00',
-        arrival_city: routes[1].destination,
-        arrival_date: formatDate(getFutureDate(day + 1)),
-        arrival_time: '07:00',
-        duration: routes[1].estimatedDuration,
-        busType: buses[1].busType,
-        model: buses[1].model,
-        busScheduleID: `SCH-${routes[1].routeNo}-${departureDate}-1700`,
-        depotName: buses[1].depotName,
-        bookingClosingDate: departureDate,
-        bookingClosingTime: '16:45',
-        price: 450000,
-        availableSeats: buses[1].totalSeats,
-        status: 'Scheduled',
-      });
-      schedules.push(schedule2);
-    }
+  // Schedule 2: VN-002 on Route 102 (Hanoi - Da Nang) - Evening Departure
+  const schedule2 = await BusSchedule.create({
+    routeNo: routes[1].routeNo,
+    busId: buses[1].id,
+    routeId: routes[1].id,
+    departure_city: routes[1].origin,
+    departure_date: formatDate(getFutureDate(0)),
+    departure_time: '17:00',
+    arrival_city: routes[1].destination,
+    arrival_date: formatDate(getFutureDate(1)),
+    arrival_time: '07:00',
+    duration: routes[1].estimatedDuration,
+    busType: buses[1].busType,
+    model: buses[1].model,
+    busScheduleID: `SCH-${routes[1].routeNo}-${formatDate(getFutureDate(0))}-1700`,
+    depotName: buses[1].depotName,
+    bookingClosingDate: formatDate(getFutureDate(0)),
+    bookingClosingTime: '16:45',
+    price: 650000,
+    availableSeats: buses[1].totalSeats,
+    status: 'Scheduled',
+  });
+  schedules.push(schedule2);
+  console.log(`  ✅ Created schedule: ${schedule2.busScheduleID} (Bus: ${buses[1].busNumber})`);
 
-    // Route 201: HCM - Nha Trang (night bus)
-    if (buses[2] && routes[2]) {
-      const schedule3 = await BusSchedule.create({
-        routeNo: routes[2].routeNo,
-        busId: buses[2].id,
-        routeId: routes[2].id,
-        departure_city: routes[2].origin,
-        departure_date: departureDate,
-        departure_time: '22:00',
-        arrival_city: routes[2].destination,
-        arrival_date: formatDate(getFutureDate(day + 1)),
-        arrival_time: '06:00',
-        duration: routes[2].estimatedDuration,
-        busType: buses[2].busType,
-        model: buses[2].model,
-        busScheduleID: `SCH-${routes[2].routeNo}-${departureDate}-2200`,
-        depotName: buses[2].depotName,
-        bookingClosingDate: departureDate,
-        bookingClosingTime: '21:45',
-        price: 280000,
-        availableSeats: buses[2].totalSeats,
-        status: 'Scheduled',
-      });
-      schedules.push(schedule3);
-    }
+  // Schedule 3: VN-003 on Route 201 (HCM - Nha Trang) - Night Departure
+  const schedule3 = await BusSchedule.create({
+    routeNo: routes[2].routeNo,
+    busId: buses[2].id,
+    routeId: routes[2].id,
+    departure_city: routes[2].origin,
+    departure_date: formatDate(getFutureDate(1)),
+    departure_time: '22:00',
+    arrival_city: routes[2].destination,
+    arrival_date: formatDate(getFutureDate(2)),
+    arrival_time: '06:00',
+    duration: routes[2].estimatedDuration,
+    busType: buses[2].busType,
+    model: buses[2].model,
+    busScheduleID: `SCH-${routes[2].routeNo}-${formatDate(getFutureDate(1))}-2200`,
+    depotName: buses[2].depotName,
+    bookingClosingDate: formatDate(getFutureDate(1)),
+    bookingClosingTime: '21:45',
+    price: 450000,
+    availableSeats: buses[2].totalSeats,
+    status: 'Scheduled',
+  });
+  schedules.push(schedule3);
+  console.log(`  ✅ Created schedule: ${schedule3.busScheduleID} (Bus: ${buses[2].busNumber})`);
 
-    // Route 103: Hanoi - Hai Phong (multiple times daily, day 0-7 only)
-    if (day < 7 && buses[3] && routes[3]) {
-      for (const time of ['06:00', '09:00', '12:00', '15:00', '18:00']) {
-        const arrivalHour = parseInt(time.split(':')[0]) + 2;
-        const schedule4 = await BusSchedule.create({
-          routeNo: routes[3].routeNo,
-          busId: buses[3].id,
-          routeId: routes[3].id,
-          departure_city: routes[3].origin,
-          departure_date: departureDate,
-          departure_time: time,
-          arrival_city: routes[3].destination,
-          arrival_date: departureDate,
-          arrival_time: `${arrivalHour.toString().padStart(2, '0')}:00`,
-          duration: routes[3].estimatedDuration,
-          busType: buses[3].busType,
-          model: buses[3].model,
-          busScheduleID: `SCH-${routes[3].routeNo}-${departureDate}-${time.replace(':', '')}`,
-          depotName: buses[3].depotName,
-          bookingClosingDate: departureDate,
-          bookingClosingTime: time,
-          price: 120000,
-          availableSeats: buses[3].totalSeats,
-          status: 'Scheduled',
-        });
-        schedules.push(schedule4);
-      }
-    }
+  // Schedule 4: VN-004 on Route 301 (Hanoi - Hai Phong) - Morning
+  const schedule4 = await BusSchedule.create({
+    routeNo: routes[3].routeNo,
+    busId: buses[3].id,
+    routeId: routes[3].id,
+    departure_city: routes[3].origin,
+    departure_date: formatDate(getFutureDate(2)),
+    departure_time: '08:00',
+    arrival_city: routes[3].destination,
+    arrival_date: formatDate(getFutureDate(2)),
+    arrival_time: '10:30',
+    duration: routes[3].estimatedDuration,
+    busType: buses[3].busType,
+    model: buses[3].model,
+    busScheduleID: `SCH-${routes[3].routeNo}-${formatDate(getFutureDate(2))}-0800`,
+    depotName: buses[3].depotName,
+    bookingClosingDate: formatDate(getFutureDate(2)),
+    bookingClosingTime: '07:45',
+    price: 250000,
+    availableSeats: buses[3].totalSeats,
+    status: 'Scheduled',
+  });
+  schedules.push(schedule4);
+  console.log(`  ✅ Created schedule: ${schedule4.busScheduleID} (Bus: ${buses[3].busNumber})`);
 
-    // Route 202: HCM - Da Lat (daily morning departure)
-    if (buses[4] && routes[4]) {
-      const schedule5 = await BusSchedule.create({
-        routeNo: routes[4].routeNo,
-        busId: buses[4].id,
-        routeId: routes[4].id,
-        departure_city: routes[4].origin,
-        departure_date: departureDate,
-        departure_time: '07:00',
-        arrival_city: routes[4].destination,
-        arrival_date: departureDate,
-        arrival_time: '14:00',
-        duration: routes[4].estimatedDuration,
-        busType: buses[4].busType,
-        model: buses[4].model,
-        busScheduleID: `SCH-${routes[4].routeNo}-${departureDate}-0700`,
-        depotName: buses[4].depotName,
-        bookingClosingDate: departureDate,
-        bookingClosingTime: '06:45',
-        price: 200000,
-        availableSeats: buses[4].totalSeats,
-        status: 'Scheduled',
-      });
-      schedules.push(schedule5);
-    }
+  // Schedule 5: VN-005 on Route 302 (HCM - Da Lat) - Afternoon
+  const schedule5 = await BusSchedule.create({
+    routeNo: routes[4].routeNo,
+    busId: buses[4].id,
+    routeId: routes[4].id,
+    departure_city: routes[4].origin,
+    departure_date: formatDate(getFutureDate(2)),
+    departure_time: '14:00',
+    arrival_city: routes[4].destination,
+    arrival_date: formatDate(getFutureDate(2)),
+    arrival_time: '21:00',
+    duration: routes[4].estimatedDuration,
+    busType: buses[4].busType,
+    model: buses[4].model,
+    busScheduleID: `SCH-${routes[4].routeNo}-${formatDate(getFutureDate(2))}-1400`,
+    depotName: buses[4].depotName,
+    bookingClosingDate: formatDate(getFutureDate(2)),
+    bookingClosingTime: '13:45',
+    price: 350000,
+    availableSeats: buses[4].totalSeats,
+    status: 'Scheduled',
+  });
+  schedules.push(schedule5);
+  console.log(`  ✅ Created schedule: ${schedule5.busScheduleID} (Bus: ${buses[4].busNumber})`);
 
-    // Route 203: HCM - Vung Tau (multiple times daily)
-    if (buses[0] && routes[5]) {
-      for (const time of ['06:00', '10:00', '14:00']) {
-        const schedule6 = await BusSchedule.create({
-          routeNo: routes[5].routeNo,
-          busId: buses[0].id,
-          routeId: routes[5].id,
-          departure_city: routes[5].origin,
-          departure_date: departureDate,
-          departure_time: time,
-          arrival_city: routes[5].destination,
-          arrival_date: departureDate,
-          arrival_time: `${(parseInt(time.split(':')[0]) + 2).toString().padStart(2, '0')}:30`,
-          duration: routes[5].estimatedDuration,
-          busType: buses[0].busType,
-          model: buses[0].model,
-          busScheduleID: `SCH-${routes[5].routeNo}-${departureDate}-${time.replace(':', '')}`,
-          depotName: buses[0].depotName,
-          bookingClosingDate: departureDate,
-          bookingClosingTime: time,
-          price: 100000,
-          availableSeats: buses[0].totalSeats,
-          status: 'Scheduled',
-        });
-        schedules.push(schedule6);
-      }
-    }
+  // Schedule 6: VN-006 on Route 303 (HCM - Vung Tau) - Morning
+  const schedule6 = await BusSchedule.create({
+    routeNo: routes[5].routeNo,
+    busId: buses[5].id,
+    routeId: routes[5].id,
+    departure_city: routes[5].origin,
+    departure_date: formatDate(getFutureDate(3)),
+    departure_time: '07:00',
+    arrival_city: routes[5].destination,
+    arrival_date: formatDate(getFutureDate(3)),
+    arrival_time: '09:30',
+    duration: routes[5].estimatedDuration,
+    busType: buses[5].busType,
+    model: buses[5].model,
+    busScheduleID: `SCH-${routes[5].routeNo}-${formatDate(getFutureDate(3))}-0700`,
+    depotName: buses[5].depotName,
+    bookingClosingDate: formatDate(getFutureDate(3)),
+    bookingClosingTime: '06:45',
+    price: 180000,
+    availableSeats: buses[5].totalSeats,
+    status: 'Scheduled',
+  });
+  schedules.push(schedule6);
+  console.log(`  ✅ Created schedule: ${schedule6.busScheduleID} (Bus: ${buses[5].busNumber})`);
 
-    // Route 104: Hanoi - Sapa (night bus, every 3 days)
-    if (day % 3 === 0 && buses[1] && routes[6]) {
-      const schedule7 = await BusSchedule.create({
-        routeNo: routes[6].routeNo,
-        busId: buses[1].id,
-        routeId: routes[6].id,
-        departure_city: routes[6].origin,
-        departure_date: departureDate,
-        departure_time: '21:00',
-        arrival_city: routes[6].destination,
-        arrival_date: formatDate(getFutureDate(day + 1)),
-        arrival_time: '03:00',
-        duration: routes[6].estimatedDuration,
-        busType: buses[1].busType,
-        model: buses[1].model,
-        busScheduleID: `SCH-${routes[6].routeNo}-${departureDate}-2100`,
-        depotName: buses[1].depotName,
-        bookingClosingDate: departureDate,
-        bookingClosingTime: '20:45',
-        price: 300000,
-        availableSeats: buses[1].totalSeats,
-        status: 'Scheduled',
-      });
-      schedules.push(schedule7);
-    }
+  // Schedule 7: VN-007 on Route 401 (Hanoi - Sapa) - Night
+  const schedule7 = await BusSchedule.create({
+    routeNo: routes[6].routeNo,
+    busId: buses[6].id,
+    routeId: routes[6].id,
+    departure_city: routes[6].origin,
+    departure_date: formatDate(getFutureDate(3)),
+    departure_time: '23:00',
+    arrival_city: routes[6].destination,
+    arrival_date: formatDate(getFutureDate(4)),
+    arrival_time: '05:00',
+    duration: routes[6].estimatedDuration,
+    busType: buses[6].busType,
+    model: buses[6].model,
+    busScheduleID: `SCH-${routes[6].routeNo}-${formatDate(getFutureDate(3))}-2300`,
+    depotName: buses[6].depotName,
+    bookingClosingDate: formatDate(getFutureDate(3)),
+    bookingClosingTime: '22:45',
+    price: 380000,
+    availableSeats: buses[6].totalSeats,
+    status: 'Scheduled',
+  });
+  schedules.push(schedule7);
+  console.log(`  ✅ Created schedule: ${schedule7.busScheduleID} (Bus: ${buses[6].busNumber})`);
 
-    // Route 301: Da Nang - Hue (multiple times daily)
-    if (buses[2] && routes[7]) {
-      for (const time of ['08:00', '13:00', '17:00']) {
-        const schedule8 = await BusSchedule.create({
-          routeNo: routes[7].routeNo,
-          busId: buses[2].id,
-          routeId: routes[7].id,
-          departure_city: routes[7].origin,
-          departure_date: departureDate,
-          departure_time: time,
-          arrival_city: routes[7].destination,
-          arrival_date: departureDate,
-          arrival_time: `${(parseInt(time.split(':')[0]) + 3).toString().padStart(2, '0')}:00`,
-          duration: routes[7].estimatedDuration,
-          busType: buses[2].busType,
-          model: buses[2].model,
-          busScheduleID: `SCH-${routes[7].routeNo}-${departureDate}-${time.replace(':', '')}`,
-          depotName: buses[2].depotName,
-          bookingClosingDate: departureDate,
-          bookingClosingTime: time,
-          price: 150000,
-          availableSeats: buses[2].totalSeats,
-          status: 'Scheduled',
-        });
-        schedules.push(schedule8);
-      }
-    }
+  // Schedule 8: VN-008 on Route 402 (Da Nang - Hue) - Morning
+  const schedule8 = await BusSchedule.create({
+    routeNo: routes[7].routeNo,
+    busId: buses[7].id,
+    routeId: routes[7].id,
+    departure_city: routes[7].origin,
+    departure_date: formatDate(getFutureDate(4)),
+    departure_time: '09:00',
+    arrival_city: routes[7].destination,
+    arrival_date: formatDate(getFutureDate(4)),
+    arrival_time: '12:00',
+    duration: routes[7].estimatedDuration,
+    busType: buses[7].busType,
+    model: buses[7].model,
+    busScheduleID: `SCH-${routes[7].routeNo}-${formatDate(getFutureDate(4))}-0900`,
+    depotName: buses[7].depotName,
+    bookingClosingDate: formatDate(getFutureDate(4)),
+    bookingClosingTime: '08:45',
+    price: 280000,
+    availableSeats: buses[7].totalSeats,
+    status: 'Scheduled',
+  });
+  schedules.push(schedule8);
+  console.log(`  ✅ Created schedule: ${schedule8.busScheduleID} (Bus: ${buses[7].busNumber})`);
 
-    // Route 204: HCM - Can Tho (daily morning)
-    if (buses[3] && routes[8]) {
-      const schedule9 = await BusSchedule.create({
-        routeNo: routes[8].routeNo,
-        busId: buses[3].id,
-        routeId: routes[8].id,
-        departure_city: routes[8].origin,
-        departure_date: departureDate,
-        departure_time: '06:00',
-        arrival_city: routes[8].destination,
-        arrival_date: departureDate,
-        arrival_time: '10:00',
-        duration: routes[8].estimatedDuration,
-        busType: buses[3].busType,
-        model: buses[3].model,
-        busScheduleID: `SCH-${routes[8].routeNo}-${departureDate}-0600`,
-        depotName: buses[3].depotName,
-        bookingClosingDate: departureDate,
-        bookingClosingTime: '05:45',
-        price: 160000,
-        availableSeats: buses[3].totalSeats,
-        status: 'Scheduled',
-      });
-      schedules.push(schedule9);
-    }
+  // Schedule 9: VN-009 on Route 403 (HCM - Can Tho) - Afternoon
+  const schedule9 = await BusSchedule.create({
+    routeNo: routes[8].routeNo,
+    busId: buses[8].id,
+    routeId: routes[8].id,
+    departure_city: routes[8].origin,
+    departure_date: formatDate(getFutureDate(5)),
+    departure_time: '15:00',
+    arrival_city: routes[8].destination,
+    arrival_date: formatDate(getFutureDate(5)),
+    arrival_time: '19:30',
+    duration: routes[8].estimatedDuration,
+    busType: buses[8].busType,
+    model: buses[8].model,
+    busScheduleID: `SCH-${routes[8].routeNo}-${formatDate(getFutureDate(5))}-1500`,
+    depotName: buses[8].depotName,
+    bookingClosingDate: formatDate(getFutureDate(5)),
+    bookingClosingTime: '14:45',
+    price: 320000,
+    availableSeats: buses[8].totalSeats,
+    status: 'Scheduled',
+  });
+  schedules.push(schedule9);
+  console.log(`  ✅ Created schedule: ${schedule9.busScheduleID} (Bus: ${buses[8].busNumber})`);
 
-    // Route 105: Hanoi - Ha Long (multiple times daily, first 10 days)
-    if (day < 10 && buses[4] && routes[9]) {
-      for (const time of ['07:00', '11:00', '15:00']) {
-        const schedule10 = await BusSchedule.create({
-          routeNo: routes[9].routeNo,
-          busId: buses[4].id,
-          routeId: routes[9].id,
-          departure_city: routes[9].origin,
-          departure_date: departureDate,
-          departure_time: time,
-          arrival_city: routes[9].destination,
-          arrival_date: departureDate,
-          arrival_time: `${(parseInt(time.split(':')[0]) + 3).toString().padStart(2, '0')}:30`,
-          duration: routes[9].estimatedDuration,
-          busType: buses[4].busType,
-          model: buses[4].model,
-          busScheduleID: `SCH-${routes[9].routeNo}-${departureDate}-${time.replace(':', '')}`,
-          depotName: buses[4].depotName,
-          bookingClosingDate: departureDate,
-          bookingClosingTime: time,
-          price: 180000,
-          availableSeats: buses[4].totalSeats,
-          status: 'Scheduled',
-        });
-        schedules.push(schedule10);
-      }
-    }
-  }
+  // Schedule 10: VN-010 on Route 404 (Hanoi - Ha Long Bay) - Morning
+  const schedule10 = await BusSchedule.create({
+    routeNo: routes[9].routeNo,
+    busId: buses[9].id,
+    routeId: routes[9].id,
+    departure_city: routes[9].origin,
+    departure_date: formatDate(getFutureDate(6)),
+    departure_time: '06:30',
+    arrival_city: routes[9].destination,
+    arrival_date: formatDate(getFutureDate(6)),
+    arrival_time: '10:00',
+    duration: routes[9].estimatedDuration,
+    busType: buses[9].busType,
+    model: buses[9].model,
+    busScheduleID: `SCH-${routes[9].routeNo}-${formatDate(getFutureDate(6))}-0630`,
+    depotName: buses[9].depotName,
+    bookingClosingDate: formatDate(getFutureDate(6)),
+    bookingClosingTime: '06:15',
+    price: 290000,
+    availableSeats: buses[9].totalSeats,
+    status: 'Scheduled',
+  });
+  schedules.push(schedule10);
+  console.log(`  ✅ Created schedule: ${schedule10.busScheduleID} (Bus: ${buses[9].busNumber})`);
 
-  console.log(`  ✅ Created ${schedules.length} bus schedules`);
+  // Schedule 11: VN-011 on Route 101 (Hanoi - HCM) - Evening
+  const schedule11 = await BusSchedule.create({
+    routeNo: routes[0].routeNo,
+    busId: buses[10].id,
+    routeId: routes[0].id,
+    departure_city: routes[0].origin,
+    departure_date: formatDate(getFutureDate(7)),
+    departure_time: '18:00',
+    arrival_city: routes[0].destination,
+    arrival_date: formatDate(getFutureDate(8)),
+    arrival_time: '18:00',
+    duration: routes[0].estimatedDuration,
+    busType: buses[10].busType,
+    model: buses[10].model,
+    busScheduleID: `SCH-${routes[0].routeNo}-${formatDate(getFutureDate(7))}-1800`,
+    depotName: buses[10].depotName,
+    bookingClosingDate: formatDate(getFutureDate(7)),
+    bookingClosingTime: '17:45',
+    price: 850000,
+    availableSeats: buses[10].totalSeats,
+    status: 'Scheduled',
+  });
+  schedules.push(schedule11);
+  console.log(`  ✅ Created schedule: ${schedule11.busScheduleID} (Bus: ${buses[10].busNumber})`);
+
+  // Schedule 12: VN-012 on Route 102 (Hanoi - Da Nang) - Morning
+  const schedule12 = await BusSchedule.create({
+    routeNo: routes[1].routeNo,
+    busId: buses[11].id,
+    routeId: routes[1].id,
+    departure_city: routes[1].origin,
+    departure_date: formatDate(getFutureDate(8)),
+    departure_time: '07:00',
+    arrival_city: routes[1].destination,
+    arrival_date: formatDate(getFutureDate(8)),
+    arrival_time: '21:00',
+    duration: routes[1].estimatedDuration,
+    busType: buses[11].busType,
+    model: buses[11].model,
+    busScheduleID: `SCH-${routes[1].routeNo}-${formatDate(getFutureDate(8))}-0700`,
+    depotName: buses[11].depotName,
+    bookingClosingDate: formatDate(getFutureDate(8)),
+    bookingClosingTime: '06:45',
+    price: 650000,
+    availableSeats: buses[11].totalSeats,
+    status: 'Scheduled',
+  });
+  schedules.push(schedule12);
+  console.log(`  ✅ Created schedule: ${schedule12.busScheduleID} (Bus: ${buses[11].busNumber})`);
+
+  // Schedule 13: VN-013 on Route 201 (HCM - Nha Trang) - Morning
+  const schedule13 = await BusSchedule.create({
+    routeNo: routes[2].routeNo,
+    busId: buses[12].id,
+    routeId: routes[2].id,
+    departure_city: routes[2].origin,
+    departure_date: formatDate(getFutureDate(9)),
+    departure_time: '08:00',
+    arrival_city: routes[2].destination,
+    arrival_date: formatDate(getFutureDate(9)),
+    arrival_time: '16:00',
+    duration: routes[2].estimatedDuration,
+    busType: buses[12].busType,
+    model: buses[12].model,
+    busScheduleID: `SCH-${routes[2].routeNo}-${formatDate(getFutureDate(9))}-0800`,
+    depotName: buses[12].depotName,
+    bookingClosingDate: formatDate(getFutureDate(9)),
+    bookingClosingTime: '07:45',
+    price: 450000,
+    availableSeats: buses[12].totalSeats,
+    status: 'Scheduled',
+  });
+  schedules.push(schedule13);
+  console.log(`  ✅ Created schedule: ${schedule13.busScheduleID} (Bus: ${buses[12].busNumber})`);
+
+  // Schedule 14: VN-014 on Route 302 (HCM - Da Lat) - Morning
+  const schedule14 = await BusSchedule.create({
+    routeNo: routes[4].routeNo,
+    busId: buses[13].id,
+    routeId: routes[4].id,
+    departure_city: routes[4].origin,
+    departure_date: formatDate(getFutureDate(10)),
+    departure_time: '06:00',
+    arrival_city: routes[4].destination,
+    arrival_date: formatDate(getFutureDate(10)),
+    arrival_time: '13:00',
+    duration: routes[4].estimatedDuration,
+    busType: buses[13].busType,
+    model: buses[13].model,
+    busScheduleID: `SCH-${routes[4].routeNo}-${formatDate(getFutureDate(10))}-0600`,
+    depotName: buses[13].depotName,
+    bookingClosingDate: formatDate(getFutureDate(10)),
+    bookingClosingTime: '05:45',
+    price: 350000,
+    availableSeats: buses[13].totalSeats,
+    status: 'Scheduled',
+  });
+  schedules.push(schedule14);
+  console.log(`  ✅ Created schedule: ${schedule14.busScheduleID} (Bus: ${buses[13].busNumber})`);
+
+  // Schedule 15: VN-015 on Route 401 (Hanoi - Sapa) - Morning
+  const schedule15 = await BusSchedule.create({
+    routeNo: routes[6].routeNo,
+    busId: buses[14].id,
+    routeId: routes[6].id,
+    departure_city: routes[6].origin,
+    departure_date: formatDate(getFutureDate(11)),
+    departure_time: '08:00',
+    arrival_city: routes[6].destination,
+    arrival_date: formatDate(getFutureDate(11)),
+    arrival_time: '14:00',
+    duration: routes[6].estimatedDuration,
+    busType: buses[14].busType,
+    model: buses[14].model,
+    busScheduleID: `SCH-${routes[6].routeNo}-${formatDate(getFutureDate(11))}-0800`,
+    depotName: buses[14].depotName,
+    bookingClosingDate: formatDate(getFutureDate(11)),
+    bookingClosingTime: '07:45',
+    price: 380000,
+    availableSeats: buses[14].totalSeats,
+    status: 'Scheduled',
+  });
+  schedules.push(schedule15);
+  console.log(`  ✅ Created schedule: ${schedule15.busScheduleID} (Bus: ${buses[14].busNumber})`);
+
+  console.log(`✅ Created ${schedules.length} bus schedules (each with unique bus assignment)`);
   return schedules;
 }
 
