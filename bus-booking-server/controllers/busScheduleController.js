@@ -1,6 +1,7 @@
 import BusSchedule from '../models/busSchedule.js';
 import Bus from '../models/Bus.js';
 import { Op } from 'sequelize';
+import sequelize from '../config/postgres.js';
 
 const mapReqToSchedule = (body) => {
   // supports both nested shape and flattened
@@ -915,9 +916,10 @@ export const fulltextSearchSchedules = async (req, res) => {
 
 /**
  * Get alternative/suggested trips
- * - Same route (same departure & arrival cities)
- * - Similar dates (±3 days)
- * - Different times or dates
+ * - Same route (same departure & arrival cities) - any date
+ * - OR Same date - any route
+ * This ensures users see trips on the same route (different dates/times)
+ * AND trips on the same date (different routes)
  */
 export const getAlternativeTrips = async (req, res) => {
   try {
@@ -938,37 +940,44 @@ export const getAlternativeTrips = async (req, res) => {
     //   return res.status(200).json(cached);
     // }
 
-    // Calculate date range (±3 days)
-    const baseDate = new Date(originalSchedule.departure_date);
-    const minDate = new Date(baseDate);
-    minDate.setDate(minDate.getDate() - 3);
-    const maxDate = new Date(baseDate);
-    maxDate.setDate(maxDate.getDate() + 3);
-
-    const formatDate = (date) => {
-      return date.toISOString().split('T')[0];
-    };
-
     // Find alternative trips
+    // Logic: Show trips with SAME ROUTE (any date) OR SAME DATE (any route)
     const alternatives = await BusSchedule.findAll({
       where: {
         id: { [Op.ne]: scheduleId }, // Exclude the original schedule
         status: 'Scheduled',
-        departure_city: originalSchedule.departure_city,
-        arrival_city: originalSchedule.arrival_city,
-        departure_date: {
-          [Op.between]: [formatDate(minDate), formatDate(maxDate)],
-        },
         availableSeats: { [Op.gt]: 0 }, // Only trips with available seats
+        [Op.or]: [
+          // Option 1: Same route (same departure & arrival cities) - any date
+          {
+            departure_city: originalSchedule.departure_city,
+            arrival_city: originalSchedule.arrival_city,
+          },
+          // Option 2: Same date - any route
+          {
+            departure_date: originalSchedule.departure_date,
+          },
+        ],
       },
       order: [
+        // Prioritize same route, then by date and time
+        [
+          sequelize.literal(
+            `CASE 
+              WHEN departure_city = '${originalSchedule.departure_city.replace(/'/g, "''")}' 
+                AND arrival_city = '${originalSchedule.arrival_city.replace(/'/g, "''")}' 
+              THEN 0 
+              ELSE 1 
+            END`
+          ),
+        ],
         ['departure_date', 'ASC'],
         ['departure_time', 'ASC'],
       ],
-      limit: parseInt(limit),
+      limit: parseInt(limit) * 2, // Get more results to filter and limit later
     });
 
-    // Attach bus metadata
+    // Attach bus metadata and categorize alternatives
     let alternativesWithBus = alternatives;
     try {
       const scheduleObjs = alternatives.map((r) => (r.toJSON ? r.toJSON() : r));
@@ -981,27 +990,46 @@ export const getAlternativeTrips = async (req, res) => {
           return acc;
         }, {});
 
-        alternativesWithBus = scheduleObjs.map((s) => ({
-          ...s,
-          bus: busMap[s.busId] || null,
-          // Add flag to indicate if same date or different date
-          sameDate: s.departure_date === originalSchedule.departure_date,
-          dateDifference: Math.floor(
-            (new Date(s.departure_date) - new Date(originalSchedule.departure_date)) /
-              (1000 * 60 * 60 * 24)
-          ),
-        }));
+        alternativesWithBus = scheduleObjs.map((s) => {
+          const isSameRoute =
+            s.departure_city === originalSchedule.departure_city &&
+            s.arrival_city === originalSchedule.arrival_city;
+          const isSameDate = s.departure_date === originalSchedule.departure_date;
+
+          return {
+            ...s,
+            bus: busMap[s.busId] || null,
+            // Add flags to indicate relationship to original schedule
+            sameRoute: isSameRoute,
+            sameDate: isSameDate,
+            dateDifference: Math.floor(
+              (new Date(s.departure_date) - new Date(originalSchedule.departure_date)) /
+                (1000 * 60 * 60 * 24)
+            ),
+          };
+        });
       } else {
-        alternativesWithBus = scheduleObjs.map((s) => ({
-          ...s,
-          bus: null,
-          sameDate: s.departure_date === originalSchedule.departure_date,
-          dateDifference: Math.floor(
-            (new Date(s.departure_date) - new Date(originalSchedule.departure_date)) /
-              (1000 * 60 * 60 * 24)
-          ),
-        }));
+        alternativesWithBus = scheduleObjs.map((s) => {
+          const isSameRoute =
+            s.departure_city === originalSchedule.departure_city &&
+            s.arrival_city === originalSchedule.arrival_city;
+          const isSameDate = s.departure_date === originalSchedule.departure_date;
+
+          return {
+            ...s,
+            bus: null,
+            sameRoute: isSameRoute,
+            sameDate: isSameDate,
+            dateDifference: Math.floor(
+              (new Date(s.departure_date) - new Date(originalSchedule.departure_date)) /
+                (1000 * 60 * 60 * 24)
+            ),
+          };
+        });
       }
+
+      // Limit the results after processing
+      alternativesWithBus = alternativesWithBus.slice(0, parseInt(limit));
     } catch (attachErr) {
       console.error('Failed to attach bus metadata:', attachErr);
       alternativesWithBus = alternatives;

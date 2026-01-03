@@ -137,36 +137,44 @@ Stores bus fleet information.
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
 | id | INTEGER | PRIMARY KEY, AUTO_INCREMENT | Unique bus ID |
-| busNumber | VARCHAR(50) | NOT NULL, UNIQUE | Bus registration number |
-| busType | VARCHAR(100) | NOT NULL | Type: Giường nằm, Ghế ngồi, etc. |
-| model | VARCHAR(100) | NOT NULL | Bus model/manufacturer |
+| busNumber | VARCHAR(255) | NOT NULL, UNIQUE | Bus registration number |
+| plateNumber | VARCHAR(20) | UNIQUE | License plate number |
+| busType | VARCHAR(255) | NOT NULL | Type: Normal, AC, Sleeper, Semi-Sleeper |
+| model | VARCHAR(255) | NOT NULL | Bus model/manufacturer |
 | totalSeats | INTEGER | NOT NULL | Total seat capacity |
-| seatLayout | VARCHAR(50) | | Seat configuration (e.g., "2x1") |
-| amenities | TEXT[] | | Array of amenities |
-| photos | TEXT[] | | Array of photo URLs |
-| status | VARCHAR(50) | DEFAULT 'active' | active/maintenance/inactive |
-| description | TEXT | | Bus description |
+| seatMapConfig | JSONB | | Seat layout configuration (JSON) |
+| amenities | TEXT[] | DEFAULT '{}' | Array of amenities (WiFi, AC, Water, etc.) |
+| status | VARCHAR(255) | DEFAULT 'active' | active/maintenance/retired |
+| depotName | VARCHAR(255) | NOT NULL | Bus depot/garage name |
+| photos | TEXT[] | DEFAULT '{}' | Array of photo URLs |
 | createdAt | TIMESTAMP | DEFAULT NOW() | Creation timestamp |
 | updatedAt | TIMESTAMP | DEFAULT NOW() | Last update timestamp |
 
 **Indexes:**
 - PRIMARY KEY on `id`
 - UNIQUE INDEX on `busNumber`
-- INDEX on `status`
+- UNIQUE INDEX on `plateNumber`
 - INDEX on `busType`
+- INDEX on `status`
 
 **Sample Data:**
 ```sql
 {
   "id": 1,
-  "busNumber": "51B-12345",
-  "busType": "Giường nằm",
+  "busNumber": "BUS001",
+  "plateNumber": "51B-12345",
+  "busType": "Sleeper",
   "model": "Hyundai Universe",
   "totalSeats": 40,
-  "seatLayout": "2x1",
-  "amenities": ["WiFi", "AC", "USB Charging", "Toilet"],
-  "photos": ["/uploads/bus1.jpg", "/uploads/bus2.jpg"],
-  "status": "active"
+  "seatMapConfig": {
+    "rows": 10,
+    "columns": 4,
+    "layout": "2x1"
+  },
+  "amenities": ["WiFi", "AC", "USB Charging", "Water", "Blanket"],
+  "photos": ["/uploads/buses/bus1.jpg", "/uploads/buses/bus2.jpg"],
+  "status": "active",
+  "depotName": "Ho Chi Minh Central Depot"
 }
 ```
 
@@ -180,18 +188,18 @@ Stores bus route information.
 |--------|------|-------------|-------------|
 | id | INTEGER | PRIMARY KEY, AUTO_INCREMENT | Unique route ID |
 | routeName | VARCHAR(255) | NOT NULL | Route name |
+| routeNo | INTEGER | NOT NULL, UNIQUE | Route number identifier |
 | origin | VARCHAR(255) | NOT NULL | Starting city |
 | destination | VARCHAR(255) | NOT NULL | Ending city |
 | distance | DECIMAL(10,2) | | Distance in km |
-| estimatedDuration | VARCHAR(50) | | Estimated travel time |
-| basePrice | DECIMAL(10,2) | | Base ticket price |
+| estimatedDuration | VARCHAR(50) | | Estimated travel time (e.g., "10:00") |
 | status | VARCHAR(50) | DEFAULT 'active' | active/inactive |
-| description | TEXT | | Route description |
 | createdAt | TIMESTAMP | DEFAULT NOW() | Creation timestamp |
 | updatedAt | TIMESTAMP | DEFAULT NOW() | Last update timestamp |
 
 **Indexes:**
 - PRIMARY KEY on `id`
+- UNIQUE INDEX on `routeNo`
 - INDEX on `origin, destination`
 - INDEX on `status`
 
@@ -205,11 +213,11 @@ Stores intermediate stops for routes.
 |--------|------|-------------|-------------|
 | id | INTEGER | PRIMARY KEY, AUTO_INCREMENT | Unique stop ID |
 | routeId | INTEGER | FOREIGN KEY → routes(id) | Route reference |
-| stopName | VARCHAR(255) | NOT NULL | Stop location name |
 | stopOrder | INTEGER | NOT NULL | Order in route |
-| arrivalTime | VARCHAR(10) | | Estimated arrival time |
-| departureTime | VARCHAR(10) | | Estimated departure time |
-| distanceFromOrigin | DECIMAL(10,2) | | Distance from start (km) |
+| stopName | VARCHAR(255) | NOT NULL | Stop location name |
+| stopType | VARCHAR(50) | NOT NULL | pickup/dropoff/both |
+| arrivalTime | VARCHAR(10) | | Relative time (e.g., "+2:00") |
+| departureTime | VARCHAR(10) | | Departure time offset |
 | createdAt | TIMESTAMP | DEFAULT NOW() | Creation timestamp |
 | updatedAt | TIMESTAMP | DEFAULT NOW() | Last update timestamp |
 
@@ -347,19 +355,24 @@ Stores temporary seat locks during booking process.
 |--------|------|-------------|-------------|
 | id | INTEGER | PRIMARY KEY, AUTO_INCREMENT | Unique lock ID |
 | scheduleId | INTEGER | NOT NULL, FOREIGN KEY → bus_schedules(id) | Schedule reference |
-| seatNumber | INTEGER | NOT NULL | Locked seat number |
+| seatNumber | VARCHAR(10) | NOT NULL | Locked seat identifier |
+| customerId | INTEGER | | Customer ID (nullable) |
 | sessionId | VARCHAR(255) | NOT NULL | User session ID |
-| status | VARCHAR(50) | DEFAULT 'locked' | locked/confirmed/released |
+| lockedAt | TIMESTAMP | NOT NULL, DEFAULT NOW() | When seat was locked |
 | expiresAt | TIMESTAMP | NOT NULL | Lock expiration time |
+| status | ENUM | DEFAULT 'locked' | locked/confirmed/released/expired |
 | createdAt | TIMESTAMP | DEFAULT NOW() | Creation timestamp |
 | updatedAt | TIMESTAMP | DEFAULT NOW() | Last update timestamp |
 
 **Indexes:**
 - PRIMARY KEY on `id`
 - FOREIGN KEY on `scheduleId`
-- UNIQUE INDEX on `scheduleId, seatNumber`
+- INDEX on `scheduleId, seatNumber`
 - INDEX on `sessionId`
-- INDEX on `expiresAt`
+- INDEX on `expiresAt, status`
+
+**Enums:**
+- status: 'locked', 'confirmed', 'released', 'expired'
 
 **TTL:** Locks expire after 15 minutes (900 seconds)
 
@@ -376,12 +389,20 @@ Stores customer reviews for completed trips.
 | busScheduleId | INTEGER | NOT NULL, FOREIGN KEY → bus_schedules(id) | Schedule reference |
 | bookingId | INTEGER | NOT NULL, FOREIGN KEY → bus_bookings(id) | Booking reference |
 | rating | INTEGER | NOT NULL, CHECK 1-5 | Overall rating (1-5 stars) |
-| comment | TEXT | | Review text |
-| serviceRating | INTEGER | CHECK 1-5 | Service rating |
-| driverRating | INTEGER | CHECK 1-5 | Driver rating |
-| vehicleRating | INTEGER | CHECK 1-5 | Vehicle rating |
-| helpful | INTEGER | DEFAULT 0 | Helpful votes count |
-| notHelpful | INTEGER | DEFAULT 0 | Not helpful votes count |
+| title | VARCHAR(200) | | Review title/summary |
+| comment | TEXT | NOT NULL | Review content/feedback |
+| cleanlinessRating | INTEGER | CHECK 1-5 | Cleanliness rating (1-5) |
+| comfortRating | INTEGER | CHECK 1-5 | Comfort rating (1-5) |
+| punctualityRating | INTEGER | CHECK 1-5 | Punctuality rating (1-5) |
+| staffRating | INTEGER | CHECK 1-5 | Staff service rating (1-5) |
+| helpfulCount | INTEGER | DEFAULT 0 | Number of helpful votes |
+| notHelpfulCount | INTEGER | DEFAULT 0 | Number of not helpful votes |
+| isVerified | BOOLEAN | DEFAULT true | Review from verified booking |
+| isVisible | BOOLEAN | DEFAULT true | Whether review is visible |
+| adminResponse | TEXT | | Response from admin/company |
+| adminResponseAt | TIMESTAMP | | When admin responded |
+| journeyDate | DATE | NOT NULL | Date of the journey reviewed |
+| routeInfo | JSONB | | Route details (JSON) |
 | createdAt | TIMESTAMP | DEFAULT NOW() | Creation timestamp |
 | updatedAt | TIMESTAMP | DEFAULT NOW() | Last update timestamp |
 
@@ -392,6 +413,17 @@ Stores customer reviews for completed trips.
 - FOREIGN KEY on `bookingId`
 - UNIQUE INDEX on `bookingId` (one review per booking)
 - INDEX on `rating`
+- INDEX on `isVisible`
+- INDEX on `createdAt`
+
+**Route Info JSONB Structure:**
+```json
+{
+  "departure": "Ho Chi Minh",
+  "arrival": "Da Nang",
+  "routeNo": 101
+}
+```
 
 ---
 
@@ -404,7 +436,7 @@ Stores helpful/not helpful votes for reviews.
 | id | INTEGER | PRIMARY KEY, AUTO_INCREMENT | Unique vote ID |
 | reviewId | INTEGER | NOT NULL, FOREIGN KEY → reviews(id) | Review reference |
 | customerId | INTEGER | NOT NULL, FOREIGN KEY → customers(id) | Customer reference |
-| voteType | VARCHAR(20) | NOT NULL | helpful/notHelpful |
+| voteType | ENUM | NOT NULL | helpful/not_helpful |
 | createdAt | TIMESTAMP | DEFAULT NOW() | Creation timestamp |
 | updatedAt | TIMESTAMP | DEFAULT NOW() | Last update timestamp |
 
@@ -413,6 +445,9 @@ Stores helpful/not helpful votes for reviews.
 - FOREIGN KEY on `reviewId`
 - FOREIGN KEY on `customerId`
 - UNIQUE INDEX on `reviewId, customerId` (one vote per user per review)
+
+**Enums:**
+- voteType: 'helpful', 'not_helpful'
 
 ---
 
@@ -425,12 +460,19 @@ Stores customer notification settings.
 | id | INTEGER | PRIMARY KEY, AUTO_INCREMENT | Unique preference ID |
 | customerId | INTEGER | NOT NULL, UNIQUE, FOREIGN KEY → customers(id) | Customer reference |
 | emailBookingConfirmation | BOOLEAN | DEFAULT true | Email on booking confirm |
-| emailTripReminder | BOOLEAN | DEFAULT true | Email trip reminder |
-| emailPaymentReceipt | BOOLEAN | DEFAULT true | Email payment receipt |
+| emailTripReminders | BOOLEAN | DEFAULT true | Email trip reminder |
+| emailCancellations | BOOLEAN | DEFAULT true | Email cancellations |
 | emailPromotions | BOOLEAN | DEFAULT false | Email promotions |
+| emailNewsletter | BOOLEAN | DEFAULT false | Email newsletter |
 | smsBookingConfirmation | BOOLEAN | DEFAULT false | SMS on booking confirm |
-| smsTripReminder | BOOLEAN | DEFAULT false | SMS trip reminder |
-| pushNotifications | BOOLEAN | DEFAULT true | Push notifications |
+| smsTripReminders | BOOLEAN | DEFAULT false | SMS trip reminder |
+| smsCancellations | BOOLEAN | DEFAULT false | SMS cancellations |
+| pushBookingConfirmation | BOOLEAN | DEFAULT true | Push notification on booking |
+| pushTripReminders | BOOLEAN | DEFAULT true | Push trip reminder |
+| pushPromotions | BOOLEAN | DEFAULT false | Push promotions |
+| phoneNumber | VARCHAR(20) | | Phone number for SMS |
+| reminderTiming | INTEGER | DEFAULT 24 | Hours before trip (1,3,6,12,24,48) |
+| timezone | VARCHAR(50) | DEFAULT 'Asia/Kolkata' | User timezone |
 | createdAt | TIMESTAMP | DEFAULT NOW() | Creation timestamp |
 | updatedAt | TIMESTAMP | DEFAULT NOW() | Last update timestamp |
 
@@ -447,19 +489,22 @@ Stores AI chatbot conversation history.
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
 | id | INTEGER | PRIMARY KEY, AUTO_INCREMENT | Unique chat ID |
-| userId | INTEGER | FOREIGN KEY → customers(id) | User reference (nullable) |
-| sessionId | VARCHAR(255) | NOT NULL | Session identifier |
-| message | TEXT | NOT NULL | User message |
-| response | TEXT | NOT NULL | Bot response |
-| metadata | JSONB | | Additional data (JSON) |
+| sessionId | UUID | NOT NULL, INDEX | Session identifier |
+| userId | INTEGER | FOREIGN KEY → customers(id) | User reference (nullable for guests) |
+| role | ENUM | NOT NULL | user/assistant/system |
+| content | TEXT | NOT NULL | Message content |
+| intent | VARCHAR(50) | | Detected intent |
+| metadata | JSONB | DEFAULT '{}' | Additional data (JSON) |
 | createdAt | TIMESTAMP | DEFAULT NOW() | Creation timestamp |
-| updatedAt | TIMESTAMP | DEFAULT NOW() | Last update timestamp |
 
 **Indexes:**
 - PRIMARY KEY on `id`
-- FOREIGN KEY on `userId` (constraints: false)
 - INDEX on `sessionId`
-- INDEX on `createdAt`
+- INDEX on `sessionId, createdAt`
+- INDEX on `userId`
+
+**Enums:**
+- role: 'user', 'assistant', 'system'
 
 **Metadata JSONB Example:**
 ```json
@@ -470,7 +515,11 @@ Stores AI chatbot conversation history.
     "to": "Da Nang",
     "date": "2024-12-25"
   },
-  "confidence": 0.95
+  "confidence": 0.95,
+  "searchParams": {
+    "departure_city": "Ho Chi Minh",
+    "arrival_city": "Da Nang"
+  }
 }
 ```
 
@@ -567,11 +616,13 @@ All foreign keys have `ON DELETE` and `ON UPDATE` actions:
 ### Check Constraints
 
 - `reviews.rating` - CHECK (rating >= 1 AND rating <= 5)
-- `reviews.serviceRating` - CHECK (serviceRating >= 1 AND serviceRating <= 5)
-- `reviews.driverRating` - CHECK (driverRating >= 1 AND driverRating <= 5)
-- `reviews.vehicleRating` - CHECK (vehicleRating >= 1 AND vehicleRating <= 5)
+- `reviews.cleanlinessRating` - CHECK (cleanlinessRating >= 1 AND cleanlinessRating <= 5)
+- `reviews.comfortRating` - CHECK (comfortRating >= 1 AND comfortRating <= 5)
+- `reviews.punctualityRating` - CHECK (punctualityRating >= 1 AND punctualityRating <= 5)
+- `reviews.staffRating` - CHECK (staffRating >= 1 AND staffRating <= 5)
 - `buses.totalSeats` - CHECK (totalSeats > 0)
 - `bus_schedules.availableSeats` - CHECK (availableSeats >= 0)
+- `notification_preferences.reminderTiming` - CHECK (reminderTiming IN (1,3,6,12,24,48))
 
 ### Unique Constraints
 
@@ -579,10 +630,12 @@ All foreign keys have `ON DELETE` and `ON UPDATE` actions:
 - `customers.username` - UNIQUE
 - `customers.googleId` - UNIQUE
 - `buses.busNumber` - UNIQUE
+- `buses.plateNumber` - UNIQUE
+- `routes.routeNo` - UNIQUE
 - `bus_bookings.bookingReference` - UNIQUE
-- `seat_locks(scheduleId, seatNumber)` - UNIQUE (composite)
 - `reviews.bookingId` - UNIQUE
 - `review_votes(reviewId, customerId)` - UNIQUE (composite)
+- `notification_preferences.customerId` - UNIQUE
 
 ---
 

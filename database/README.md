@@ -18,11 +18,18 @@ The Bus Ticket Booking System uses **PostgreSQL 15.x** as the primary database w
 
 ### Database Information
 
-- **Database Name:** `bus_booking`
+- **Database Name:** `bus_booking` (or `bus_booking_db` - check your .env)
 - **User:** `bus_booking_user`
 - **ORM:** Sequelize v6
-- **Migration Tool:** SQL scripts + Sequelize migrations
+- **Migration Tool:** SQL scripts + Sequelize migrations + Auto-migration on boot
 - **Backup Strategy:** Daily automated backups
+
+### Auto-Migration on Boot
+
+The system automatically runs `scripts/migrate_booking_schema.js` on server startup to:
+- Safely handle ENUM type changes (especially `bus_bookings.status`)
+- Prevent data loss during schema updates
+- Ensure database compatibility with current models
 
 ## 📁 Database Structure
 
@@ -89,8 +96,10 @@ Run the following SQL commands:
 -- Create user
 CREATE USER bus_booking_user WITH PASSWORD 'your_secure_password';
 
--- Create database
+-- Create database (use either name, but match it in your .env file)
 CREATE DATABASE bus_booking;
+-- OR
+-- CREATE DATABASE bus_booking_db;
 
 -- Grant privileges
 GRANT ALL PRIVILEGES ON DATABASE bus_booking TO bus_booking_user;
@@ -152,11 +161,14 @@ Migrations are version-controlled database schema changes. They allow you to:
 
 ### Available Migrations
 
-| Migration File | Description | Date |
-|----------------|-------------|------|
-| `20260101-bus-management-updates.sql` | Adds `plateNumber` and `photos` to buses, removes `seatMapConfig` | 2026-01-01 |
-| `add_fullname_to_customers.sql` | Adds `fullName` column to customers table | 2026-01-01 |
-| `add_schedule_status.sql` | Adds `status` column to bus_schedules table | 2026-01-01 |
+| Migration File | Description | Date | Auto-Run |
+|----------------|-------------|------|----------|
+| `migrate_booking_schema.js` | Safely handles booking status ENUM changes | 2026-01-01 | ✅ Yes (on boot) |
+| `20260101-bus-management-updates.sql` | Adds `plateNumber` and `photos` to buses, removes `seatMapConfig` from schedules | 2026-01-01 | ❌ Manual |
+| `add_fullname_to_customers.sql` | Adds `fullName` column to customers table | 2026-01-01 | ❌ Manual |
+| `add_schedule_status.sql` | Adds `status` ENUM to bus_schedules table | 2026-01-01 | ❌ Manual |
+
+**Note:** The `migrate_booking_schema.js` script runs automatically when the server starts (`index.js` calls `migrateBookingSchema()` before syncing models).
 
 ### Running Migrations
 
@@ -298,38 +310,75 @@ If you need to rollback a migration:
 
 Seed data is used for development and testing purposes.
 
-### Running Seeds
-
-#### Method 1: Using npm scripts
+### Quick Start
 
 ```bash
 cd bus-booking-server
 
-# Seed admin user
-npm run seed-admin
+# Option 1: Use the automated seed script (recommended)
+npm run seed
 
-# Seed all sample data
-npm run seed-data
+# Option 2: Seed specific data
+npm run seed:admin      # Admin user only
+npm run seed:routes     # Routes and route stops
+npm run seed:buses      # Bus fleet
+npm run seed:schedules  # Bus schedules (next 7 days)
+npm run seed:customers  # Test customer accounts
 ```
 
-#### Method 2: Manual SQL import
+### Manual SQL Import
 
-```bash
+If npm scripts are not available:
+
+```powershell
+# Windows PowerShell
 cd database/seeds
 
-# Seed admin user
+# Import in order (dependencies matter!)
 psql -U bus_booking_user -d bus_booking -h localhost -f admin-user.sql
-
-# Seed sample routes
 psql -U bus_booking_user -d bus_booking -h localhost -f sample-routes.sql
-
-# Seed sample buses
 psql -U bus_booking_user -d bus_booking -h localhost -f sample-buses.sql
+psql -U bus_booking_user -d bus_booking -h localhost -f sample-schedules.sql
+psql -U bus_booking_user -d bus_booking -h localhost -f sample-customers.sql
 ```
 
-### Available Seed Data
+```bash
+# Linux/macOS
+cd database/seeds
 
-See `database/seeds/README.md` for details on available seed data.
+# Import all seeds
+for file in admin-user.sql sample-routes.sql sample-buses.sql sample-schedules.sql sample-customers.sql; do
+  psql -U bus_booking_user -d bus_booking -h localhost -f $file
+done
+```
+
+### Available Seed Files
+
+| File | Description | Records | Dependencies |
+|------|-------------|---------|--------------|
+| `admin-user.sql` | Default admin account | 1 admin | None |
+| `sample-routes.sql` | 13 popular routes + stops | 13 routes, 10 stops | None |
+| `sample-buses.sql` | Bus fleet (various types) | 10 buses | None |
+| `sample-schedules.sql` | Next 7 days schedules | ~70 schedules | routes, buses |
+| `sample-customers.sql` | Test customer accounts | 6 customers | None |
+
+**Total:** ~100 database records ready for testing
+
+### Test Accounts After Seeding
+
+**Admin Account:**
+- Email: `admin@busbooking.com`
+- Username: `admin`
+- Password: `Admin@123456`
+
+**Customer Account:**
+- Email: `john.doe@example.com`
+- Username: `johndoe`
+- Password: `Test@123456`
+
+⚠️ **Change default passwords in production!**
+
+For detailed seed information, see `database/seeds/README.md`.
 
 ## 💾 Backups
 
@@ -375,16 +424,17 @@ Recommended backup strategy:
 
 | Table | Description | Key Columns |
 |-------|-------------|-------------|
-| `customers` | User accounts | id, email, username, fullName, position |
-| `buses` | Bus fleet | id, plateNumber, licensePlate, capacity, amenities, photos |
-| `routes` | Bus routes | id, origin, destination, distance, duration |
-| `route_stops` | Route waypoints | id, route_id, city, stopOrder |
-| `bus_schedules` | Schedule & pricing | id, bus_id, route_id, departure_time, price, status |
-| `bus_bookings` | Customer bookings | id, customer_id, schedule_id, seats, total_price, status |
-| `reviews` | Trip reviews | id, booking_id, customer_id, rating, comment |
-| `seat_locks` | Real-time locks | id, schedule_id, seat_number, locked_until |
-| `notification_preferences` | User settings | id, customer_id, email_enabled, sms_enabled |
-| `chat_histories` | AI chatbot logs | id, customer_id, message, response |
+| `customers` | User accounts (local, OAuth, guest) | id, email, username, fullName, position, provider, isGuest |
+| `buses` | Bus fleet information | id, busNumber, plateNumber, busType, totalSeats, seatMapConfig, amenities, photos, depotName |
+| `routes` | Bus routes | id, routeNo, routeName, origin, destination, distance, estimatedDuration |
+| `route_stops` | Intermediate stops | id, routeId, stopOrder, stopName, stopType, arrivalTime |
+| `bus_schedules` | Trip schedules | id, routeNo, busId, departure_date, departure_time, price, availableSeats, status |
+| `bus_bookings` | Customer bookings | id, customerId, busScheduleId, seatNumbers, status, bookingReference, expiresAt |
+| `seat_locks` | Temporary seat locks | id, scheduleId, seatNumber, sessionId, customerId, expiresAt, status |
+| `reviews` | Trip reviews & ratings | id, bookingId, customerId, rating, comment, helpfulCount, isVisible |
+| `review_votes` | Review helpfulness votes | id, reviewId, customerId, voteType |
+| `notification_preferences` | User notification settings | id, customerId, email*, sms*, push*, reminderTiming |
+| `chat_histories` | AI chatbot conversations | id, sessionId, userId, role, content, intent, metadata |
 
 For complete schema details, see [`docs/DATABASE_DESIGN.md`](../docs/DATABASE_DESIGN.md).
 

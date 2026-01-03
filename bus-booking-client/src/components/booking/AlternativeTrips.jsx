@@ -77,29 +77,56 @@ export default function AlternativeTrips({ scheduleId, onSelectTrip }) {
     );
   }
 
-  const getDateBadge = trip => {
-    if (trip.sameDate) {
-      return (
-        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-          Same Day
+  const getBadges = trip => {
+    const badges = [];
+
+    // Badge for same route
+    if (trip.sameRoute) {
+      badges.push(
+        <span
+          key="same-route"
+          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800"
+        >
+          Same Route
         </span>
       );
     }
 
-    const diff = trip.dateDifference;
-    if (diff > 0) {
-      return (
-        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-info-800">
-          +{diff} day{diff > 1 ? 's' : ''}
+    // Badge for same date
+    if (trip.sameDate) {
+      badges.push(
+        <span
+          key="same-date"
+          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
+        >
+          Same Day
         </span>
       );
-    } else {
-      return (
-        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-          {diff} day{Math.abs(diff) > 1 ? 's' : ''}
-        </span>
-      );
+    } else if (trip.dateDifference !== undefined) {
+      // Show date difference if different date
+      const diff = trip.dateDifference;
+      if (diff > 0) {
+        badges.push(
+          <span
+            key="date-diff"
+            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-info-800"
+          >
+            +{diff} day{diff > 1 ? 's' : ''}
+          </span>
+        );
+      } else if (diff < 0) {
+        badges.push(
+          <span
+            key="date-diff"
+            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800"
+          >
+            {diff} day{Math.abs(diff) > 1 ? 's' : ''}
+          </span>
+        );
+      }
     }
+
+    return badges;
   };
 
   return (
@@ -114,12 +141,12 @@ export default function AlternativeTrips({ scheduleId, onSelectTrip }) {
 
       {originalSchedule && (
         <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-          <p>Showing alternatives for:</p>
+          <p>Alternatives on same route or same date:</p>
           <p className="font-semibold text-gray-800 mt-1">
             {originalSchedule.departure_city} → {originalSchedule.arrival_city}
           </p>
           <p className="text-xs mt-1">
-            Original: {originalSchedule.departure_date} at{' '}
+            Selected: {originalSchedule.departure_date} at{' '}
             {originalSchedule.departure_time}
           </p>
         </div>
@@ -158,12 +185,12 @@ export default function AlternativeTrips({ scheduleId, onSelectTrip }) {
                   </div>
                 </div>
 
-                {/* Bus Type & Date Badge */}
-                <div className="flex items-center gap-2">
+                {/* Bus Type & Badges */}
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                     {trip.busType}
                   </span>
-                  {getDateBadge(trip)}
+                  {getBadges(trip)}
                 </div>
               </div>
 

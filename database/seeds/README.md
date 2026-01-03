@@ -13,29 +13,49 @@ Seed data is used to:
 
 ### Available Seeds
 
-| File | Purpose | Environment | Status |
-|------|---------|-------------|--------|
-| `admin-user.sql` | Create default admin account | All | 📝 To Create |
-| `sample-routes.sql` | Popular bus routes in Vietnam | Dev/Test | 📝 To Create |
-| `sample-buses.sql` | Sample bus fleet | Dev/Test | 📝 To Create |
-| `sample-schedules.sql` | Sample bus schedules | Dev/Test | 📝 To Create |
-| `sample-customers.sql` | Test customer accounts | Dev/Test | 📝 To Create |
+| File | Purpose | Environment | Records | Status |
+|------|---------|-------------|---------|--------|
+| `admin-user.sql` | Create default admin account | All | 1 admin + preferences | ✅ Ready |
+| `sample-routes.sql` | Popular bus routes in Vietnam | Dev/Test | 13 routes + 10 stops | ✅ Ready |
+| `sample-buses.sql` | Sample bus fleet (various types) | Dev/Test | 10 buses | ✅ Ready |
+| `sample-schedules.sql` | Bus schedules (next 7 days) | Dev/Test | ~70 schedules | ✅ Ready |
+| `sample-customers.sql` | Test customer accounts | Dev/Test | 6 customers | ✅ Ready |
+
+**Total Sample Data:** ~100 database records
 
 ## 🚀 How to Import Seed Data
 
 ### Prerequisites
 
-- Database created and migrations completed
-- PostgreSQL client installed
-- Appropriate user permissions
+- Database created and running
+- Migrations completed (or auto-sync enabled)
+- Appropriate user permissions (`bus_booking_user`)
 
-### Method 1: Import All Seeds
+### Method 1: Using npm Scripts (Recommended)
+
+**From project root or server directory:**
+
+```bash
+cd bus-booking-server
+
+# Import all seeds in correct order
+npm run seed
+
+# Or import specific seeds:
+npm run seed:admin      # Admin user only
+npm run seed:routes     # Routes and stops
+npm run seed:buses      # Bus fleet
+npm run seed:schedules  # Schedules for next 7 days
+npm run seed:customers  # Test customers
+```
+
+### Method 2: Import All Seeds Manually
 
 **Windows PowerShell:**
 ```powershell
 cd database/seeds
 
-# Import in order
+# Import in dependency order
 psql -U bus_booking_user -d bus_booking -h localhost -f admin-user.sql
 psql -U bus_booking_user -d bus_booking -h localhost -f sample-routes.sql
 psql -U bus_booking_user -d bus_booking -h localhost -f sample-buses.sql
@@ -43,19 +63,18 @@ psql -U bus_booking_user -d bus_booking -h localhost -f sample-schedules.sql
 psql -U bus_booking_user -d bus_booking -h localhost -f sample-customers.sql
 ```
 
-**Linux/macOS:**
+**Linux/macOS Bash:**
 ```bash
 cd database/seeds
 
-# Import in order
-psql -U bus_booking_user -d bus_booking -h localhost -f admin-user.sql
-psql -U bus_booking_user -d bus_booking -h localhost -f sample-routes.sql
-psql -U bus_booking_user -d bus_booking -h localhost -f sample-buses.sql
-psql -U bus_booking_user -d bus_booking -h localhost -f sample-schedules.sql
-psql -U bus_booking_user -d bus_booking -h localhost -f sample-customers.sql
+# Import all at once
+for file in admin-user.sql sample-routes.sql sample-buses.sql sample-schedules.sql sample-customers.sql; do
+  echo "Importing $file..."
+  psql -U bus_booking_user -d bus_booking -h localhost -f $file
+done
 ```
 
-### Method 2: Import Specific Seed
+### Method 3: Import Specific Seed
 
 ```bash
 # Import only admin user
@@ -63,22 +82,22 @@ psql -U bus_booking_user -d bus_booking -h localhost -f admin-user.sql
 
 # Import only routes
 psql -U bus_booking_user -d bus_booking -h localhost -f sample-routes.sql
+
+# Import only buses
+psql -U bus_booking_user -d bus_booking -h localhost -f sample-buses.sql
 ```
 
-### Method 3: Using npm Scripts (from server)
+### Important: Import Order
 
-```bash
-cd bus-booking-server
+⚠️ **Seeds must be imported in this order due to foreign key dependencies:**
 
-# Seed admin user
-npm run seed-admin
+1. `admin-user.sql` (no dependencies)
+2. `sample-routes.sql` (no dependencies)
+3. `sample-buses.sql` (no dependencies)
+4. `sample-customers.sql` (no dependencies)
+5. `sample-schedules.sql` (requires routes and buses)
 
-# Seed all sample data
-npm run seed-data
-
-# Clean and reseed (WARNING: deletes all data)
-npm run reseed
-```
+**Wrong order will cause foreign key constraint errors!**
 
 ## 📝 Seed Data Details
 
@@ -87,17 +106,281 @@ npm run reseed
 **Purpose:** Create default administrator account
 
 **Data Included:**
-- Admin username: `admin`
 - Admin email: `admin@busbooking.com`
-- Default password: `Admin@123456` (should be changed after first login)
+- Admin username: `admin`
+- Default password: `Admin@123456` (⚠️ change after first login!)
 - Position: `admin`
-- Verified account
+- Verified account: `true`
+- Notification preferences: enabled
 
-**Example:**
+**Records Created:** 1 admin user + 1 notification preference
+
+**Usage:**
+```bash
+psql -U bus_booking_user -d bus_booking -f admin-user.sql
+```
+
+**Login After Seeding:**
+- Email: `admin@busbooking.com`
+- Password: `Admin@123456`
+
+---
+
+### 2. Sample Routes (sample-routes.sql)
+
+**Purpose:** Create popular bus routes across Vietnam
+
+**Data Included:**
+- **13 routes** covering major cities:
+  - North-South: HCM-Hanoi, HCM-Da Nang, Hanoi-Da Nang
+  - Southern: HCM-Nha Trang, HCM-Vung Tau, HCM-Can Tho, HCM-Dalat
+  - Central: Da Nang-Hue, Da Nang-Hoi An, Nha Trang-Dalat
+  - Northern: Hanoi-Haiphong, Hanoi-Ninh Binh, Hanoi-Ha Long
+- **10 route stops** for major routes (HCM-Da Nang, HCM-Nha Trang)
+- Distance and estimated duration for each route
+- Route numbers (101-403)
+
+**Records Created:** 13 routes + 10 route stops
+
+**Sample Route:**
+```
+Route 102: Ho Chi Minh - Da Nang
+Distance: 964 km
+Duration: 18 hours
+Stops: 6 (including pickup/dropoff points)
+```
+
+---
+
+### 3. Sample Buses (sample-buses.sql)
+
+**Purpose:** Create a diverse bus fleet for testing
+
+**Data Included:**
+- **10 buses** with various types:
+  - 3 Sleeper buses (32-40 seats)
+  - 2 Semi-Sleeper buses (42-45 seats)
+  - 2 Seater buses (29-35 seats)
+  - 2 Limousine buses (16-18 seats)
+  - 1 bus in maintenance status
+- Bus numbers: BUS001-BUS010
+- Plate numbers: 51B-12345, etc.
+- Seat configurations (JSONB)
+- Amenities arrays (WiFi, AC, USB, Water, etc.)
+- Depot assignments
+
+**Records Created:** 10 buses
+
+**Bus Types:**
+- **Sleeper:** Long-distance overnight trips, reclining beds
+- **Semi-Sleeper:** Medium comfort, adjustable seats
+- **Seater:** Standard seating buses
+- **Limousine:** Premium service, fewer seats
+
+---
+
+### 4. Sample Schedules (sample-schedules.sql)
+
+**Purpose:** Generate bus schedules for the next 7 days
+
+**Data Included:**
+- **~70 schedules** covering:
+  - HCM - Da Nang: 2 trips/day (morning & evening)
+  - HCM - Nha Trang: 2 trips/day (day & night)
+  - HCM - Vung Tau: 3 trips/day (every 4 hours)
+  - HCM - Dalat: 1 limousine trip/day
+- Dynamic date generation (next 7 days from import date)
+- Prices: 120,000 - 480,000 VND depending on route/type
+- All seats initially available
+- Status: 'Scheduled'
+
+**Records Created:** ~70 bus schedules
+
+**Schedule Pattern:**
+```
+Daily schedules for:
+- Long routes: 2-3 departures/day
+- Short routes: 3-4 departures/day
+- Premium routes: 1-2 departures/day
+```
+
+⚠️ **Note:** Schedules use `CURRENT_DATE` + offset, so they're always relevant when seeded.
+
+---
+
+### 5. Sample Customers (sample-customers.sql)
+
+**Purpose:** Create test customer accounts for development
+
+**Data Included:**
+- **6 customer accounts:**
+  1. John Doe (verified, local auth)
+  2. Jane Smith (verified, local auth, Vietnamese locale)
+  3. Nguyễn Văn A (verified, Vietnamese)
+  4. Trần Thị B (verified, notifications disabled)
+  5. New User (unverified)
+  6. Google User (OAuth)
+- All local users password: `Test@123456`
+- Notification preferences for all customers
+- Phone numbers for Vietnamese customers
+
+**Records Created:** 6 customers + 6 notification preferences
+
+**Test Accounts:**
+
+| Email | Username | Password | Verified | Provider |
+|-------|----------|----------|----------|----------|
+| john.doe@example.com | johndoe | Test@123456 | ✅ | local |
+| jane.smith@example.com | janesmith | Test@123456 | ✅ | local |
+| nguyen.van.a@example.com | nguyenvana | Test@123456 | ✅ | local |
+| tran.thi.b@example.com | tranthib | Test@123456 | ✅ | local |
+| new.user@example.com | newuser | Test@123456 | ❌ | local |
+| google.user@gmail.com | googleuser | N/A | ✅ | google |
+
+**Usage for Testing:**
+- Login testing: Use `john.doe@example.com` / `Test@123456`
+- Email verification flow: Use `new.user@example.com`
+- OAuth testing: Check `google.user@gmail.com`
+
+---
+
+## 🔄 Re-seeding Data
+
+### Clean and Re-seed
+
+If you need to reset all seed data:
+
+```bash
+# Method 1: Drop and recreate database
+dropdb -U postgres bus_booking
+createdb -U postgres bus_booking
+# Then run all seeds again
+
+# Method 2: Delete specific data
+psql -U bus_booking_user -d bus_booking -c "TRUNCATE customers, routes, buses, bus_schedules, route_stops CASCADE;"
+# Then re-import seeds
+```
+
+⚠️ **Warning:** This will delete ALL data including real bookings!
+
+---
+
+## 🧪 Verifying Seed Data
+
+After importing, verify the data:
+
 ```sql
-INSERT INTO customers (
-  email, 
-  username, 
+-- Check all tables
+SELECT 
+  'customers' as table_name, COUNT(*) as count FROM customers
+UNION ALL
+SELECT 'routes', COUNT(*) FROM routes
+UNION ALL
+SELECT 'route_stops', COUNT(*) FROM route_stops
+UNION ALL
+SELECT 'buses', COUNT(*) FROM buses
+UNION ALL
+SELECT 'bus_schedules', COUNT(*) FROM bus_schedules
+UNION ALL
+SELECT 'notification_preferences', COUNT(*) FROM notification_preferences;
+
+-- Check admin user
+SELECT email, username, position, "isVerified" 
+FROM customers 
+WHERE position = 'admin';
+
+-- Check upcoming schedules
+SELECT 
+  "departure_city",
+  "arrival_city",
+  "departure_date",
+  "departure_time",
+  "busType",
+  "availableSeats"
+FROM bus_schedules
+WHERE "departure_date" >= CURRENT_DATE
+ORDER BY "departure_date", "departure_time"
+LIMIT 10;
+```
+
+---
+
+## 📊 Expected Results
+
+After successful seeding:
+
+```
+✅ Admin user: 1
+✅ Routes: 13
+✅ Route stops: 10
+✅ Buses: 10 (9 active, 1 maintenance)
+✅ Bus schedules: ~70 (next 7 days)
+✅ Customers: 7 (1 admin + 6 test accounts)
+✅ Notification preferences: 7
+---
+Total records: ~117
+```
+
+---
+
+## 🚨 Troubleshooting
+
+### Error: "duplicate key value violates unique constraint"
+
+**Cause:** Seeds already imported
+
+**Solution:**
+```sql
+-- Skip conflicts (already in seed files with ON CONFLICT)
+-- OR manually delete existing data first
+DELETE FROM customers WHERE email = 'admin@busbooking.com';
+```
+
+### Error: "relation does not exist"
+
+**Cause:** Tables not created yet
+
+**Solution:**
+```bash
+# Run migrations or sync database first
+cd bus-booking-server
+npm run sync-db
+# Then re-import seeds
+```
+
+### Error: "foreign key violation"
+
+**Cause:** Wrong import order
+
+**Solution:** Import in correct order (see "Import Order" section above)
+
+### Schedules are in the past
+
+**Cause:** Seed file creates schedules from import date
+
+**Solution:** Re-import `sample-schedules.sql` to generate new dates
+
+---
+
+## 💡 Tips
+
+1. **Always import admin-user.sql first** - You'll need admin access for testing
+2. **Import seeds after migrations** - Ensure schema is up-to-date
+3. **Use npm scripts when available** - They handle order and errors
+4. **Check seed output** - Each file shows success messages and counts
+5. **Don't use seed data in production** - These are test accounts with weak passwords
+
+---
+
+## 🔗 Related Documentation
+
+- [Database README](../README.md) - Database setup and migrations
+- [Database Design](../../docs/DATABASE_DESIGN.md) - Schema documentation
+- [Setup Guide](../../docs/SETUP_GUIDE.md) - Full application setup
+
+---
+
+**Last Updated:** January 3, 2026 
   password, 
   "fullName", 
   position, 
