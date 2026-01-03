@@ -68,12 +68,23 @@ export default function Dashboard() {
 
   // derive upcoming and history from fetched bookings
   // Filter out bookings with completed schedules from upcoming
-  const upcomingBookings = bookings.filter(
-    b => ['pending', 'confirmed'].includes(b.status) && !b.schedule?.isCompleted
-  );
-  const bookingHistory = bookings.filter(b =>
-    ['completed', 'cancelled', 'expired'].includes(b.status)
-  );
+  // Exclude expired bookings from upcoming trips (check both status and expiresAt)
+  const upcomingBookings = bookings.filter(b => {
+    const isExpired =
+      b.status === 'expired' ||
+      (b.expiresAt && new Date(b.expiresAt) < new Date());
+    return (
+      ['pending', 'confirmed'].includes(b.status) &&
+      !isExpired &&
+      !b.schedule?.isCompleted
+    );
+  });
+  const bookingHistory = bookings.filter(b => {
+    const isExpired =
+      b.status === 'expired' ||
+      (b.expiresAt && new Date(b.expiresAt) < new Date());
+    return ['completed', 'cancelled'].includes(b.status) || isExpired;
+  });
 
   // Calculate refund information
   const getRefundInfo = booking => {
@@ -119,6 +130,16 @@ export default function Dashboard() {
   };
 
   const handleCancelClick = booking => {
+    // Check if booking has expired
+    const isExpired =
+      booking.status === 'expired' ||
+      (booking.expiresAt && new Date(booking.expiresAt) < new Date());
+
+    if (isExpired) {
+      alert('Cannot cancel - this booking has expired');
+      return;
+    }
+
     setSelectedBooking(booking);
     setShowCancelModal(true);
   };
@@ -232,12 +253,24 @@ export default function Dashboard() {
                       >
                         Details
                       </button>
-                      <button
-                        onClick={() => handleCancelClick(booking)}
-                        className="px-3 py-1 text-sm text-error-600 bg-red-100 hover:bg-red-200 rounded transition"
-                      >
-                        Cancel
-                      </button>
+                      {(() => {
+                        // Double-check booking hasn't expired since page load
+                        const isExpired =
+                          booking.status === 'expired' ||
+                          (booking.expiresAt &&
+                            new Date(booking.expiresAt) < new Date());
+                        if (!isExpired) {
+                          return (
+                            <button
+                              onClick={() => handleCancelClick(booking)}
+                              className="px-3 py-1 text-sm text-error-600 bg-red-100 hover:bg-red-200 rounded transition"
+                            >
+                              Cancel
+                            </button>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   </div>
                 </div>

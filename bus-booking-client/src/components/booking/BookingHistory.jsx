@@ -189,11 +189,23 @@ export default function BookingHistory() {
   };
 
   const filteredBookings = bookings.filter(booking => {
-    if (filter === 'all') return true;
-    if (filter === 'upcoming') return ['pending'].includes(booking.status);
-    if (filter === 'confirmed') return booking.status === 'confirmed';
+    // Check if booking has expired based on expiresAt field
+    const isExpired =
+      booking.status === 'expired' ||
+      (booking.expiresAt && new Date(booking.expiresAt) < new Date());
+
+    if (filter === 'all') {
+      // In 'All' tab, exclude expired bookings (they belong in Cancelled tab)
+      return !isExpired;
+    }
+    // Upcoming: only pending and confirmed, exclude expired
+    if (filter === 'upcoming')
+      return ['pending', 'confirmed'].includes(booking.status) && !isExpired;
+    if (filter === 'confirmed')
+      return booking.status === 'confirmed' && !isExpired;
+
     if (filter === 'cancelled')
-      return ['cancelled', 'expired', 'completed'].includes(booking.status);
+      return ['cancelled', 'completed'].includes(booking.status) || isExpired;
     return true;
   });
 
@@ -350,19 +362,34 @@ export default function BookingHistory() {
                       View Details
                     </button>
 
-                    {['pending', 'confirmed'].includes(booking.status) &&
-                      !booking.schedule?.isCompleted && (
-                        <button
-                          onClick={() => {
-                            setSelectedBooking(booking);
-                            setShowCancelModal(true);
-                          }}
-                          className="flex-1 lg:flex-none px-4 py-2 bg-error-600 text-white rounded-lg hover:bg-error-700 transition-colors flex items-center justify-center gap-2"
-                        >
-                          <Ban size={18} />
-                          Cancel
-                        </button>
-                      )}
+                    {(() => {
+                      // Check if booking is expired
+                      const isExpired =
+                        booking.status === 'expired' ||
+                        (booking.expiresAt &&
+                          new Date(booking.expiresAt) < new Date());
+
+                      // Only show cancel button for pending/confirmed bookings that haven't expired
+                      if (
+                        ['pending', 'confirmed'].includes(booking.status) &&
+                        !booking.schedule?.isCompleted &&
+                        !isExpired
+                      ) {
+                        return (
+                          <button
+                            onClick={() => {
+                              setSelectedBooking(booking);
+                              setShowCancelModal(true);
+                            }}
+                            className="flex-1 lg:flex-none px-4 py-2 bg-error-600 text-white rounded-lg hover:bg-error-700 transition-colors flex items-center justify-center gap-2"
+                          >
+                            <Ban size={18} />
+                            Cancel
+                          </button>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 </div>
               </div>

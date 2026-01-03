@@ -26,6 +26,8 @@ import microservicesRoutes from './routes/microservicesRoutes.js';
 import './models/associations.js';
 // Import trip reminder scheduler
 import { initializeTripReminderScheduler } from './utils/tripReminderScheduler.js';
+// Import schedule status scheduler
+import { initializeScheduleStatusScheduler } from './utils/scheduleStatusScheduler.js';
 // Import microservices
 import { initializeMicroservices } from './microservices/index.js';
 
@@ -138,6 +140,9 @@ initializeMicroservices();
 
 // Initialize trip reminder scheduler
 initializeTripReminderScheduler();
+
+// Initialize schedule status auto-update scheduler
+initializeScheduleStatusScheduler();
 
 // Global error handlers to capture unexpected errors during development
 process.on('unhandledRejection', (reason, p) => {

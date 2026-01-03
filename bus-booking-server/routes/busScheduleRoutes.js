@@ -18,6 +18,7 @@ import {
 } from '../controllers/busScheduleController.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 import { autoUpdateScheduleStatus } from '../middleware/updateScheduleStatus.js';
+import { triggerScheduleStatusUpdate } from '../utils/scheduleStatusScheduler.js';
 
 const router = express.Router();
 
@@ -151,5 +152,13 @@ router.delete('/bus-schedule/:id', authenticateToken, requireAdmin, deleteBusSch
 router.get('/bus-schedule/:id/passengers', authenticateToken, requireAdmin, getSchedulePassengers);
 router.post('/bus-schedule/:id/checkin', authenticateToken, requireAdmin, checkinPassenger);
 router.post('/bus-schedule/:id/update-status', authenticateToken, requireAdmin, updateTripStatus);
+
+// Manual trigger for schedule status update (Admin only - for testing)
+router.post(
+  '/bus-schedules/trigger-status-update',
+  authenticateToken,
+  requireAdmin,
+  triggerScheduleStatusUpdate
+);
 
 export default router;
