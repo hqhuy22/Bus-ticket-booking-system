@@ -442,78 +442,86 @@ export const confirmBooking = async (req, res) => {
 
     await t.commit();
 
-    // Send booking confirmation email with e-ticket
-    try {
-      const customer = await Customer.findByPk(customerId);
-      if (customer && customer.email) {
-        // Check if user wants email notifications
-        const emailEnabled = await checkNotificationEnabled(customerId, 'emailBookingConfirmation');
-
-        if (emailEnabled) {
-          const bookingDetails = {
-            bookingReference: booking.bookingReference,
-            departure: booking.departure,
-            arrival: booking.arrival,
-            date: new Date(booking.journeyDate).toLocaleDateString('en-US', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            }),
-            time: booking.booking_startTime,
-            seatNo: Array.isArray(booking.seatNumbers)
-              ? booking.seatNumbers.join(', ')
-              : booking.seatNumbers,
-            totalPay: booking.payment_totalPay,
-          };
-
-          // Generate e-ticket PDF
-          let ticketPdf = null;
-          try {
-            ticketPdf = await generateETicket(booking);
-            console.log(`E-ticket generated for booking ${booking.bookingReference}`);
-          } catch (pdfError) {
-            console.error('Failed to generate e-ticket PDF:', pdfError);
-            // Continue without PDF attachment
-          }
-
-          await sendBookingConfirmation(
-            customer.email,
-            customer.username,
-            bookingDetails,
-            ticketPdf // Include e-ticket as attachment
-          );
-          console.log(`Booking confirmation email with e-ticket sent to ${customer.email}`);
-        }
-      }
-    } catch (emailError) {
-      // Don't fail the booking if email fails
-      console.error('Failed to send booking confirmation email:', emailError);
-    }
-
-    // Send instant trip reminder if booking is < 24h before departure
-    console.log(
-      `[ConfirmBooking] Checking instant reminder for booking ${booking.bookingReference}, customer ID: ${customerId}`
-    );
-    try {
-      const customer = await Customer.findByPk(customerId);
-      console.log(`[ConfirmBooking] Customer found: ${customer ? customer.id : 'null'}`);
-      if (customer) {
-        console.log(`[ConfirmBooking] Calling sendInstantTripReminderIfNeeded...`);
-        await sendInstantTripReminderIfNeeded(booking, customer);
-        console.log(`[ConfirmBooking] sendInstantTripReminderIfNeeded completed`);
-      } else {
-        console.log(`[ConfirmBooking] Customer ${customerId} not found`);
-      }
-    } catch (reminderError) {
-      // Don't fail booking if reminder fails
-      console.error('[ConfirmBooking] Failed to send instant trip reminder:', reminderError);
-      console.error('[ConfirmBooking] Stack:', reminderError.stack);
-    }
-
+    // Send response immediately, then handle email/notifications in background
     res.status(200).json({
       message: 'Booking confirmed successfully',
       booking,
+    });
+
+    // Send booking confirmation email with e-ticket (async, don't block response)
+    setImmediate(async () => {
+      try {
+        const customer = await Customer.findByPk(customerId);
+        if (customer && customer.email) {
+          // Check if user wants email notifications
+          const emailEnabled = await checkNotificationEnabled(
+            customerId,
+            'emailBookingConfirmation'
+          );
+
+          if (emailEnabled) {
+            const bookingDetails = {
+              bookingReference: booking.bookingReference,
+              departure: booking.departure,
+              arrival: booking.arrival,
+              date: new Date(booking.journeyDate).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              }),
+              time: booking.booking_startTime,
+              seatNo: Array.isArray(booking.seatNumbers)
+                ? booking.seatNumbers.join(', ')
+                : booking.seatNumbers,
+              totalPay: booking.payment_totalPay,
+            };
+
+            // Generate e-ticket PDF
+            let ticketPdf = null;
+            try {
+              ticketPdf = await generateETicket(booking);
+              console.log(`E-ticket generated for booking ${booking.bookingReference}`);
+            } catch (pdfError) {
+              console.error('Failed to generate e-ticket PDF:', pdfError);
+              // Continue without PDF attachment
+            }
+
+            await sendBookingConfirmation(
+              customer.email,
+              customer.username,
+              bookingDetails,
+              ticketPdf // Include e-ticket as attachment
+            );
+            console.log(`Booking confirmation email with e-ticket sent to ${customer.email}`);
+          }
+        }
+      } catch (emailError) {
+        // Don't fail the booking if email fails
+        console.error('Failed to send booking confirmation email:', emailError);
+      }
+    });
+
+    // Send instant trip reminder if booking is < 24h before departure (async)
+    setImmediate(async () => {
+      console.log(
+        `[ConfirmBooking] Checking instant reminder for booking ${booking.bookingReference}, customer ID: ${customerId}`
+      );
+      try {
+        const customer = await Customer.findByPk(customerId);
+        console.log(`[ConfirmBooking] Customer found: ${customer ? customer.id : 'null'}`);
+        if (customer) {
+          console.log(`[ConfirmBooking] Calling sendInstantTripReminderIfNeeded...`);
+          await sendInstantTripReminderIfNeeded(booking, customer);
+          console.log(`[ConfirmBooking] sendInstantTripReminderIfNeeded completed`);
+        } else {
+          console.log(`[ConfirmBooking] Customer ${customerId} not found`);
+        }
+      } catch (reminderError) {
+        // Don't fail booking if reminder fails
+        console.error('[ConfirmBooking] Failed to send instant trip reminder:', reminderError);
+        console.error('[ConfirmBooking] Stack:', reminderError.stack);
+      }
     });
   } catch (error) {
     await t.rollback();
@@ -1057,97 +1065,102 @@ export const adminConfirmBooking = async (req, res) => {
 
     await t.commit();
 
-    // Send booking confirmation email with e-ticket
-    try {
-      const customer = await Customer.findByPk(booking.customerId);
-
-      if (customer) {
-        // Check if it's a guest or regular user
-        const isGuest = customer.isGuest;
-        const recipientEmail = isGuest ? customer.guestEmail : customer.email;
-        const recipientName = isGuest ? customer.guestName : customer.username;
-
-        if (recipientEmail) {
-          // For regular users, check notification preferences
-          let shouldSendEmail = true;
-          if (!isGuest) {
-            shouldSendEmail = await checkNotificationEnabled(
-              booking.customerId,
-              'emailBookingConfirmation'
-            );
-          }
-          // For guests, always send email
-
-          if (shouldSendEmail) {
-            const bookingDetails = {
-              bookingReference: booking.bookingReference,
-              departure: booking.departure,
-              arrival: booking.arrival,
-              date: new Date(booking.journeyDate).toLocaleDateString('en-US', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              }),
-              time: booking.booking_startTime,
-              seatNo: Array.isArray(booking.seatNumbers)
-                ? booking.seatNumbers.join(', ')
-                : booking.seatNumbers,
-              totalPay: booking.payment_totalPay,
-            };
-
-            // Generate e-ticket PDF
-            let ticketPdf = null;
-            try {
-              ticketPdf = await generateETicket(booking);
-              console.log(`[Admin] E-ticket generated for booking ${booking.bookingReference}`);
-            } catch (pdfError) {
-              console.error('[Admin] Failed to generate e-ticket PDF:', pdfError);
-              // Continue without PDF attachment
-            }
-
-            await sendBookingConfirmation(
-              recipientEmail,
-              recipientName || 'Guest',
-              bookingDetails,
-              ticketPdf // Include e-ticket as attachment
-            );
-            console.log(
-              `[Admin] Booking confirmation email sent to ${recipientEmail} (Guest: ${isGuest})`
-            );
-          }
-        } else {
-          console.log(`[Admin] No email found for customer ${booking.customerId}`);
-        }
-      }
-    } catch (emailError) {
-      // Don't fail the confirmation if email fails
-      console.error('Failed to send booking confirmation email:', emailError);
-    }
-
-    // Send instant trip reminder if booking is < 24h before departure
-    console.log(
-      `[AdminConfirm] Checking instant reminder for booking ${booking.bookingReference}, customer ID: ${booking.customerId}`
-    );
-    try {
-      const customer = await Customer.findByPk(booking.customerId);
-      console.log(`[AdminConfirm] Customer found: ${customer ? customer.id : 'null'}`);
-      if (customer) {
-        console.log(`[AdminConfirm] Calling sendInstantTripReminderIfNeeded...`);
-        await sendInstantTripReminderIfNeeded(booking, customer);
-        console.log(`[AdminConfirm] sendInstantTripReminderIfNeeded completed`);
-      } else {
-        console.log(`[AdminConfirm] Customer ${booking.customerId} not found`);
-      }
-    } catch (reminderError) {
-      // Don't fail booking if reminder fails
-      console.error('[AdminConfirm] Failed to send instant trip reminder:', reminderError);
-      console.error('[AdminConfirm] Stack:', reminderError.stack);
-    }
-
+    // Send response immediately, then handle email/notifications in background
     res.status(200).json({
       message: 'Booking confirmed successfully by admin',
       booking,
+    });
+
+    // Send booking confirmation email with e-ticket (async, don't block response)
+    setImmediate(async () => {
+      try {
+        const customer = await Customer.findByPk(booking.customerId);
+
+        if (customer) {
+          // Check if it's a guest or regular user
+          const isGuest = customer.isGuest;
+          const recipientEmail = isGuest ? customer.guestEmail : customer.email;
+          const recipientName = isGuest ? customer.guestName : customer.username;
+
+          if (recipientEmail) {
+            // For regular users, check notification preferences
+            let shouldSendEmail = true;
+            if (!isGuest) {
+              shouldSendEmail = await checkNotificationEnabled(
+                booking.customerId,
+                'emailBookingConfirmation'
+              );
+            }
+            // For guests, always send email
+
+            if (shouldSendEmail) {
+              const bookingDetails = {
+                bookingReference: booking.bookingReference,
+                departure: booking.departure,
+                arrival: booking.arrival,
+                date: new Date(booking.journeyDate).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                }),
+                time: booking.booking_startTime,
+                seatNo: Array.isArray(booking.seatNumbers)
+                  ? booking.seatNumbers.join(', ')
+                  : booking.seatNumbers,
+                totalPay: booking.payment_totalPay,
+              };
+
+              // Generate e-ticket PDF
+              let ticketPdf = null;
+              try {
+                ticketPdf = await generateETicket(booking);
+                console.log(`[Admin] E-ticket generated for booking ${booking.bookingReference}`);
+              } catch (pdfError) {
+                console.error('[Admin] Failed to generate e-ticket PDF:', pdfError);
+                // Continue without PDF attachment
+              }
+
+              await sendBookingConfirmation(
+                recipientEmail,
+                recipientName || 'Guest',
+                bookingDetails,
+                ticketPdf // Include e-ticket as attachment
+              );
+              console.log(
+                `[Admin] Booking confirmation email sent to ${recipientEmail} (Guest: ${isGuest})`
+              );
+            }
+          } else {
+            console.log(`[Admin] No email found for customer ${booking.customerId}`);
+          }
+        }
+      } catch (emailError) {
+        // Don't fail the confirmation if email fails
+        console.error('Failed to send booking confirmation email:', emailError);
+      }
+    });
+
+    // Send instant trip reminder if booking is < 24h before departure (async)
+    setImmediate(async () => {
+      console.log(
+        `[AdminConfirm] Checking instant reminder for booking ${booking.bookingReference}, customer ID: ${booking.customerId}`
+      );
+      try {
+        const customer = await Customer.findByPk(booking.customerId);
+        console.log(`[AdminConfirm] Customer found: ${customer ? customer.id : 'null'}`);
+        if (customer) {
+          console.log(`[AdminConfirm] Calling sendInstantTripReminderIfNeeded...`);
+          await sendInstantTripReminderIfNeeded(booking, customer);
+          console.log(`[AdminConfirm] sendInstantTripReminderIfNeeded completed`);
+        } else {
+          console.log(`[AdminConfirm] Customer ${booking.customerId} not found`);
+        }
+      } catch (reminderError) {
+        // Don't fail booking if reminder fails
+        console.error('[AdminConfirm] Failed to send instant trip reminder:', reminderError);
+        console.error('[AdminConfirm] Stack:', reminderError.stack);
+      }
     });
   } catch (error) {
     await t.rollback();

@@ -114,6 +114,10 @@ const createTransporter = () => {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD,
       },
+      // Add connection timeout
+      connectionTimeout: 10000, // 10 seconds
+      greetingTimeout: 10000, // 10 seconds
+      socketTimeout: 30000, // 30 seconds
     });
 
     // Optional: verify connection configuration when creating transporter to surface auth/connection issues early.
@@ -139,65 +143,90 @@ const createTransporter = () => {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASSWORD, // App password or OAuth2 token
     },
+    // Add connection timeout
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 10000, // 10 seconds
+    socketTimeout: 30000, // 30 seconds
   });
 };
 
 /**
  * Universal email sending function that works with all providers
+ * Wraps email sending with timeout to prevent hanging requests
  */
 export const sendEmail = async (mailOptions) => {
   console.log(
     `[Email] Attempting to send email to: ${mailOptions.to}, subject: ${mailOptions.subject}`
   );
 
-  // SendGrid
-  if (process.env.EMAIL_PROVIDER === 'sendgrid' && process.env.SENDGRID_API_KEY) {
-    console.log('[Email] Using SendGrid provider');
-    const msg = {
-      to: mailOptions.to,
-      from: process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_USER,
-      subject: mailOptions.subject,
-      html: mailOptions.html,
-    };
-    await sgMail.send(msg);
-    console.log(`[Email] SendGrid email sent successfully to ${mailOptions.to}`);
-    return;
-  }
+  // Wrap the entire email send operation with a timeout
+  const emailTimeout = parseInt(process.env.EMAIL_TIMEOUT || '45000', 10); // 45 seconds default
+  
+  const sendPromise = (async () => {
+    // SendGrid
+    if (process.env.EMAIL_PROVIDER === 'sendgrid' && process.env.SENDGRID_API_KEY) {
+      console.log('[Email] Using SendGrid provider');
+      const msg = {
+        to: mailOptions.to,
+        from: process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_USER,
+        subject: mailOptions.subject,
+        html: mailOptions.html,
+      };
+      await sgMail.send(msg);
+      console.log(`[Email] SendGrid email sent successfully to ${mailOptions.to}`);
+      return;
+    }
 
-  // AWS SES
-  if (process.env.EMAIL_PROVIDER === 'ses' && sesClient) {
-    console.log('[Email] Using AWS SES provider');
-    const params = {
-      Source: process.env.AWS_SES_FROM_EMAIL || process.env.EMAIL_USER,
-      Destination: {
-        ToAddresses: Array.isArray(mailOptions.to) ? mailOptions.to : [mailOptions.to],
-      },
-      Message: {
-        Subject: {
-          Data: mailOptions.subject,
-          Charset: 'UTF-8',
+    // AWS SES
+    if (process.env.EMAIL_PROVIDER === 'ses' && sesClient) {
+      console.log('[Email] Using AWS SES provider');
+      const params = {
+        Source: process.env.AWS_SES_FROM_EMAIL || process.env.EMAIL_USER,
+        Destination: {
+          ToAddresses: Array.isArray(mailOptions.to) ? mailOptions.to : [mailOptions.to],
         },
-        Body: {
-          Html: {
-            Data: mailOptions.html,
+        Message: {
+          Subject: {
+            Data: mailOptions.subject,
             Charset: 'UTF-8',
           },
+          Body: {
+            Html: {
+              Data: mailOptions.html,
+              Charset: 'UTF-8',
+            },
+          },
         },
-      },
-    };
-    const command = new aws.SendEmailCommand(params);
-    await sesClient.send(command);
-    console.log(`[Email] AWS SES email sent successfully to ${mailOptions.to}`);
-    return;
-  }
+      };
+      const command = new aws.SendEmailCommand(params);
+      await sesClient.send(command);
+      console.log(`[Email] AWS SES email sent successfully to ${mailOptions.to}`);
+      return;
+    }
 
-  // Nodemailer (SMTP or Gmail)
-  console.log('[Email] Using Nodemailer (SMTP/Gmail)');
-  const transporter = createTransporter();
-  const info = await transporter.sendMail(mailOptions);
-  console.log(
-    `[Email] Nodemailer email sent successfully to ${mailOptions.to}, messageId: ${info.messageId}`
-  );
+    // Nodemailer (SMTP or Gmail)
+    console.log('[Email] Using Nodemailer (SMTP/Gmail)');
+    const transporter = createTransporter();
+    const info = await transporter.sendMail(mailOptions);
+    console.log(
+      `[Email] Nodemailer email sent successfully to ${mailOptions.to}, messageId: ${info.messageId}`
+    );
+  })();
+
+  // Race between email send and timeout
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(
+      () => reject(new Error(`Email sending timeout after ${emailTimeout}ms`)),
+      emailTimeout
+    );
+  });
+
+  try {
+    await Promise.race([sendPromise, timeoutPromise]);
+  } catch (error) {
+    console.error(`[Email] Failed to send email to ${mailOptions.to}:`, error.message);
+    throw error;
+  }
 };
 
 /**
