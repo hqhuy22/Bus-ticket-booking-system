@@ -11,7 +11,7 @@ import axiosInstance from '../utils/axiosConfig';
  */
 export default function useTripStatus(
   bookingId,
-  pollingInterval = 30000,
+  pollingInterval = 5000,
   enabled = true
 ) {
   const [tripStatus, setTripStatus] = useState(null);
